@@ -14,10 +14,7 @@ class BaseColumnView(object):
         return self.table_name, str(self.filters), str(self.group_by)
 
     def get_value(self, row):
-        return row[self.key] if row else None
-
-    def apply_vc(self, view_context):
-        view_context.append_view(self.key, self.aggregate_fn, self.table_name, self.filters, self.group_by)
+        return row.get(self.key, None) if row else None
 
 
 class SimpleView(BaseColumnView):

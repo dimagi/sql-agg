@@ -88,7 +88,7 @@ class ViewContext(object):
             qm.check()
             query = sqlalchemy.select()
             for group_key in qm.group_by:
-                query.append_group_by(group_key)
+                query.append_group_by(self.table.c[group_key])
 
             for c in qm.columns:
                 col = self.table.c[c.column_name]
