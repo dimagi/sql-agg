@@ -1,0 +1,3 @@
+SQLAlchemy==0.8.0
+SQLAlchemy-Fixtures==0.1.5
+fixture==1.4
