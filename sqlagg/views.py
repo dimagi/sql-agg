@@ -1,13 +1,14 @@
-from sqlalchemy import func
+from sqlalchemy import func, distinct
 from sqlagg import QueryView
 from queries import MedianQueryMeta
 
 
 class BaseColumnView(object):
-    def __init__(self, key, as_name=None, aggregate_fn=None, table_name=None, filters=None, group_by=None):
+    aggregate_fn = None
+
+    def __init__(self, key, as_name=None, table_name=None, filters=None, group_by=None):
         self.key = key
         self.as_name = as_name
-        self.aggregate_fn = aggregate_fn
         self.table_name = table_name
         self.filters = filters
         self.group_by = group_by
@@ -20,46 +21,31 @@ class BaseColumnView(object):
 
 
 class SimpleView(BaseColumnView):
-    def __init__(self, *args, **kwargs):
-        super(SimpleView, self).__init__(*args, **kwargs)
+    pass
 
 
 class SumView(BaseColumnView):
-    def __init__(self, *args, **kwargs):
-        kwargs["aggregate_fn"] = func.sum
-        super(SumView, self).__init__(*args, **kwargs)
+    aggregate_fn = func.sum
 
 
 class CountView(BaseColumnView):
-    def __init__(self, *args, **kwargs):
-        kwargs["aggregate_fn"] = func.count
-        super(CountView, self).__init__(*args, **kwargs)
+    aggregate_fn = func.count
 
 
 class MaxView(BaseColumnView):
-    def __init__(self, *args, **kwargs):
-        kwargs["aggregate_fn"] = func.max
-        super(MaxView, self).__init__(*args, **kwargs)
+    aggregate_fn = func.max
 
 
 class MinView(BaseColumnView):
-    def __init__(self, *args, **kwargs):
-        kwargs["aggregate_fn"] = func.min
-        super(MinView, self).__init__(*args, **kwargs)
+    aggregate_fn = func.min
 
 
 class MeanView(BaseColumnView):
-    def __init__(self, *args, **kwargs):
-        kwargs["aggregate_fn"] = func.avg
-        super(MeanView, self).__init__(*args, **kwargs)
+    aggregate_fn = func.avg
 
 
 class UniqueView(BaseColumnView):
-    def __init__(self, *args, **kwargs):
-        from sqlalchemy import distinct
-
-        kwargs["aggregate_fn"] = lambda c: func.count(distinct(c))
-        super(UniqueView, self).__init__(*args, **kwargs)
+    aggregate_fn = lambda view, column: func.count(distinct(column))
 
 
 class MedianView(QueryView):

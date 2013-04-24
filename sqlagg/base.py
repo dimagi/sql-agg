@@ -81,15 +81,6 @@ class SimpleQueryMeta(QueryMeta):
                (self.columns, self.filters, self.group_by, self.table_name)
 
 
-class CustomQueryMeta(QueryMeta):
-
-    def append_view(self, view):
-        pass
-
-    def execute(self, metadata, connection, filter_values):
-        pass
-
-
 class ViewContext(object):
     def __init__(self, table, filters={}, group_by=[]):
         self.table_name = table
@@ -122,9 +113,7 @@ class ViewContext(object):
         return self._metadata
 
     def resolve(self, connection, filter_values=None):
-        from queries.median_numpy import NumpyMedianAggregate
         self.connection = connection
-        connection.create_aggregate("np_median", 1, NumpyMedianAggregate)
 
         for qm in self.query_meta.values():
             result = qm.execute(self.metadata, self.connection, filter_values or {})

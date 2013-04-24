@@ -110,7 +110,11 @@ class TestSqlAgg(DataTestCase, unittest.TestCase):
     def test_custom_view(self):
         from sqlalchemy import func
         vc = ViewContext("user_table", filters=None, group_by=[])
-        agg_view = BaseColumnView("indicator_a", aggregate_fn=lambda x: func.avg(x) / func.sum(x))
+
+        class CustomView(BaseColumnView):
+            aggregate_fn = lambda view, col: func.avg(col) / func.sum(col)
+
+        agg_view = CustomView("indicator_a")
         vc.append_view(agg_view)
         vc.resolve(self.session.connection(), None)
 

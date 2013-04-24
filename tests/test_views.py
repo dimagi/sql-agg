@@ -6,7 +6,6 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from models import metadata, UserTable, RegionTable
 from fixtures import RegionData, UserData
 from sqlagg import *
-from sqlagg.views import NumpyMedianView
 
 engine = create_engine('sqlite:///:memory:')
 metadata.bind = engine
