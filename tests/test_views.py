@@ -6,6 +6,7 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from models import metadata, UserTable, RegionTable
 from fixtures import RegionData, UserData
 from sqlagg import *
+from sqlagg.views import NumpyMedianView
 
 engine = create_engine('sqlite:///:memory:')
 metadata.bind = engine
@@ -57,9 +58,9 @@ class TestSqlAggViews(DataTestCase, unittest.TestCase):
         return vc.data
 
     def test_median(self):
-        self._test_view(MedianView("indicator_a"), 2)
+        self._test_view(MedianView("indicator_a"), 1.5)
 
     def test_median_group(self):
         data = self._get_view_data(MedianView("indicator_a", group_by=["user"]))
-        self.assertEqual(data["user1"]["indicator_a"], 3)
-        self.assertEqual(data["user2"]["indicator_a"], 2)
+        self.assertEqual(data["user1"]["indicator_a"], 2)
+        self.assertEqual(data["user2"]["indicator_a"], 1)

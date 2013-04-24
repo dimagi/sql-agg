@@ -122,7 +122,9 @@ class ViewContext(object):
         return self._metadata
 
     def resolve(self, connection, filter_values=None):
+        from queries.median_numpy import NumpyMedianAggregate
         self.connection = connection
+        connection.create_aggregate("np_median", 1, NumpyMedianAggregate)
 
         for qm in self.query_meta.values():
             result = qm.execute(self.metadata, self.connection, filter_values or {})
