@@ -9,44 +9,89 @@ class SqlColumn(object):
     """
     Simple representation of a column with a name and an aggregation function which can be None.
     """
-    def __init__(self, column_name, aggregate_fn=None):
+    def __init__(self, column_name, aggregate_fn=None, as_name=None):
         self.column_name = column_name
+        self.as_name = as_name or column_name
         self.aggregate_fn = aggregate_fn
 
+    def build_column(self, sql_table):
+        table_column = sql_table.c[self.column_name]
+        sql_col = self.aggregate_fn(table_column) if self.aggregate_fn else table_column
+        return sql_col.label(self.as_name)
+
     def __repr__(self):
-        return "SqlColumn(column_name=%s)" % (self.column_name)
+        return "SqlColumn(column_name=%s)" % self.column_name
 
 
 class QueryMeta(object):
+    def __init__(self, table_name, filters, group_by):
+        self.filters = filters
+        self.group_by = group_by
+        self.table_name = table_name
+
+    def append_view(self, view):
+        pass
+
+    def execute(self, metadata, connection, filter_values):
+        raise NotImplementedError()
+
+
+class SimpleQueryMeta(QueryMeta):
     """
     Metadata about a query including the table being queried, list of columns, filters and group by columns.
     """
-    def __init__(self):
+    def __init__(self, table_name, filters, group_by):
+        super(SimpleQueryMeta, self).__init__(table_name, filters, group_by)
         self.columns = []
-        self.filters = []
-        self.group_by = []
-        self.table_name = None
 
-    def append_column(self, key, aggregate_fn):
-        aggregate_fn = aggregate_fn or sqlalchemy.func.sum
-        self.columns.append(SqlColumn(key, aggregate_fn if not key in self.group_by else None))
+    def append_view(self, view):
+        self.columns.append(SqlColumn(view.key, view.aggregate_fn, view.as_name))
 
-    def check(self):
+    def _check(self):
         groups = list(self.group_by)
         for c in self.columns:
             if c.column_name in groups:
                 groups.remove(c.column_name)
 
         for g in groups:
-            self.append_column(g, None)
+            self.columns.append(SqlColumn(g, aggregate_fn=None, as_name=g))
+
+    def execute(self, metadata, connection, filter_values):
+        query = self._build_query(metadata)
+        return connection.execute(query, **filter_values).fetchall()
+
+    def _build_query(self, metadata):
+        self._check()
+        table = metadata.tables[self.table_name]
+        query = sqlalchemy.select()
+        for group_key in self.group_by:
+            query.append_group_by(table.c[group_key])
+
+        for c in self.columns:
+            query.append_column(c.build_column(table))
+
+        if self.filters:
+            for filter in self.filters:
+                query.append_whereclause(filter)
+
+        return query
 
     def __repr__(self):
         return "Querymeta(columns=%s, filters=%s, group_by=%s, table=%s)" % \
                (self.columns, self.filters, self.group_by, self.table_name)
 
 
+class CustomQueryMeta(QueryMeta):
+
+    def append_view(self, view):
+        pass
+
+    def execute(self, metadata, connection, filter_values):
+        pass
+
+
 class ViewContext(object):
-    def __init__(self, table, filters=None, group_by=None):
+    def __init__(self, table, filters={}, group_by=[]):
         self.table_name = table
         self.filters = filters
         self.group_by = group_by
@@ -56,21 +101,16 @@ class ViewContext(object):
     def append_view(self, view):
         query_key = view.view_key
         query = self.query_meta.setdefault(query_key, self._new_query_meta(view))
-        query.append_column(view.key, view.aggregate_fn)
+        query.append_view(view)
 
     def _new_query_meta(self, view):
-        qm = QueryMeta()
-        qm.table_name = view.table_name or self.table_name
-        qm.filters = view.filters or self.filters
-        qm.group_by = view.group_by or self.group_by
-        return qm
-
-    @property
-    def table(self):
-        if not hasattr(self, '_table'):
-            self._table = self.metadata.tables[self.table_name]
-
-        return self._table
+        if isinstance(view, QueryView):
+            return view.get_query_meta(self.table_name, self.filters, self.group_by)
+        else:
+            table_name = view.table_name or self.table_name
+            filters = view.filters or self.filters
+            group_by = view.group_by or self.group_by
+            return SimpleQueryMeta(table_name, filters, group_by)
 
     @property
     def metadata(self):
@@ -81,26 +121,12 @@ class ViewContext(object):
 
         return self._metadata
 
-    def resolve(self, connection, filter_values):
+    def resolve(self, connection, filter_values=None):
         self.connection = connection
 
         for qm in self.query_meta.values():
-            qm.check()
-            query = sqlalchemy.select()
-            for group_key in qm.group_by:
-                query.append_group_by(self.table.c[group_key])
+            result = qm.execute(self.metadata, self.connection, filter_values or {})
 
-            for c in qm.columns:
-                col = self.table.c[c.column_name]
-                sql_col = c.aggregate_fn(col) if c.aggregate_fn else col
-                query.append_column(sql_col.label(c.column_name))
-
-            if qm.filters:
-                for filter in qm.filters:
-                    query.append_whereclause(filter.format(**filter_values))
-
-            logger.debug("%s", query)
-            result = self.connection.execute(query).fetchall()
             for r in result:
                 row = self.data
                 for group in qm.group_by:
@@ -109,3 +135,12 @@ class ViewContext(object):
 
     def __str__(self):
         return str(self.query_meta)
+
+
+class QueryView(object):
+    @property
+    def view_key(self):
+        raise NotImplementedError()
+
+    def get_query_meta(self):
+        raise NotImplementedError()

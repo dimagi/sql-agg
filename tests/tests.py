@@ -36,7 +36,7 @@ class TestSqlAgg(DataTestCase, unittest.TestCase):
         self.assertEqual(data['user2']['indicator_b'], 2)
 
     def test_filters(self):
-        filters = ["date < '{enddate}'"]
+        filters = ["date < :enddate"]
         filter_values = {"enddate": date(2013, 02, 01)}
 
         data = self.get_user_data(filter_values, filters)
@@ -46,7 +46,7 @@ class TestSqlAgg(DataTestCase, unittest.TestCase):
         self.assertEqual(data['user2']['indicator_b'], 1)
 
     def test_filters_multiple(self):
-        filters = ["date > '{startdate}'", "date < '{enddate}'"]
+        filters = ["date > :startdate", "date < :enddate"]
         filter_values = {"startdate": date(2013, 02, 20), "enddate": date(2013, 03, 05)}
 
         data = self.get_user_data(filter_values, filters)
@@ -70,6 +70,73 @@ class TestSqlAgg(DataTestCase, unittest.TestCase):
         region2_a = region2['region2_a']
         self.assertEqual(region2_a['indicator_a'], 2)
         self.assertEqual(region2_a['indicator_b'], 1)
+
+    def test_different_filters(self):
+        filters = ["date < :enddate"]
+        filter_values = {"enddate": date(2013, 02, 01)}
+        vc = ViewContext("user_table", filters=filters, group_by=["user"])
+        user = SimpleView("user")
+        i_a = SumView("indicator_a")
+        i_b = SumView("indicator_b", filters=["date > :enddate"])
+        vc.append_view(user)
+        vc.append_view(i_a)
+        vc.append_view(i_b)
+        vc.resolve(self.session.connection(), filter_values)
+        data = vc.data
+
+        self.assertEqual(data['user1']['indicator_a'], 1)
+        self.assertNotIn('indicator_b', data['user1'])
+        self.assertEqual(data['user2']['indicator_a'], 0)
+        self.assertEqual(data['user2']['indicator_b'], 1)
+
+    def test_as_names(self):
+        filters = ["date < :enddate"]
+        filter_values = {"enddate": date(2013, 04, 01)}
+        vc = ViewContext("user_table", filters=filters, group_by=["user"])
+        user = SimpleView("user")
+        i_sum_a = SumView("indicator_a", as_name="sum_a")
+        i_count_a = CountView("indicator_a", as_name="count_a")
+        vc.append_view(user)
+        vc.append_view(i_sum_a)
+        vc.append_view(i_count_a)
+        vc.resolve(self.session.connection(), filter_values)
+        data = vc.data
+
+        self.assertEqual(data['user1']['sum_a'], 4)
+        self.assertEqual(data['user1']['count_a'], 2)
+        self.assertEqual(data['user2']['sum_a'], 2)
+        self.assertEqual(data['user2']['count_a'], 2)
+
+    def test_custom_view(self):
+        from sqlalchemy import func
+        vc = ViewContext("user_table", filters=None, group_by=[])
+        agg_view = BaseColumnView("indicator_a", aggregate_fn=lambda x: func.avg(x) / func.sum(x))
+        vc.append_view(agg_view)
+        vc.resolve(self.session.connection(), None)
+
+        self.assertEqual(vc.data["indicator_a"], 0.25)
+
+    def test_multiple_tables(self):
+        filters = ["date < :enddate"]
+        filter_values = {"enddate": date(2013, 04, 01)}
+        vc = ViewContext("user_table", filters=filters, group_by=["user"])
+        user = SimpleView("user")
+        i_a = SumView("indicator_a")
+
+        region = SimpleView("region", table_name="region_table", group_by=["region"])
+        i_a_r = SumView("indicator_a", table_name="region_table", group_by=["region"])
+        vc.append_view(user)
+        vc.append_view(i_a)
+
+        vc.append_view(region)
+        vc.append_view(i_a_r)
+        vc.resolve(self.session.connection(), filter_values)
+        data = vc.data
+
+        self.assertEqual(data['user1']['indicator_a'], 4)
+        self.assertEqual(data['user2']['indicator_a'], 2)
+        self.assertEqual(data['region1']['indicator_a'], 5)
+        self.assertEqual(data['region2']['indicator_a'], 2)
 
     def get_user_data(self, filter_values, filters):
         vc = ViewContext("user_table", filters=filters, group_by=["user"])

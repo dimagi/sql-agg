@@ -8,6 +8,7 @@ class UserData(DataSet):
         date = datetime.date(2013, 01, 01)
         indicator_a = 1
         indicator_b = 1
+        indicator_c = 1
 
     class r2:
         user = "user1"
@@ -20,6 +21,7 @@ class UserData(DataSet):
         date = datetime.date(2013, 01, 01)
         indicator_a = 0
         indicator_b = 3
+        indicator_c = 2
 
     class r4:
         user = "user2"
