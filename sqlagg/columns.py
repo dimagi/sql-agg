@@ -6,9 +6,9 @@ from queries import MedianQueryMeta
 class BaseColumnColumn(object):
     aggregate_fn = None
 
-    def __init__(self, key, as_name=None, table_name=None, filters=None, group_by=None):
+    def __init__(self, key, alias=None, table_name=None, filters=None, group_by=None):
         self.key = key
-        self.as_name = as_name
+        self.alias = alias
         self.table_name = table_name
         self.filters = filters
         self.group_by = group_by
@@ -16,7 +16,7 @@ class BaseColumnColumn(object):
         #TODO: allow 'having' e.g. count(x) having x > 4
 
     @property
-    def view_key(self):
+    def column_key(self):
         return self.table_name, str(self.filters), str(self.group_by)
 
 
@@ -31,7 +31,7 @@ class CustomQueryColumn(BaseColumnColumn, QueryColumn):
         return self.query_cls(table_name, filters, group_by)
 
     @property
-    def view_key(self):
+    def column_key(self):
         return self.name, self.key, self.table_name, str(self.filters), str(self.group_by)
 
 

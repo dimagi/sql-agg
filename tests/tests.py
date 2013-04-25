@@ -74,7 +74,7 @@ class TestSqlAgg(DataTestCase, unittest.TestCase):
     def test_different_filters(self):
         filters = ["date < :enddate"]
         filter_values = {"enddate": date(2013, 02, 01)}
-        vc = ViewContext("user_table", filters=filters, group_by=["user"])
+        vc = QueryContext("user_table", filters=filters, group_by=["user"])
         user = SimpleColumn("user")
         i_a = SumColumn("indicator_a")
         i_b = SumColumn("indicator_b", filters=["date > :enddate"])
@@ -88,13 +88,13 @@ class TestSqlAgg(DataTestCase, unittest.TestCase):
         self.assertEqual(data['user2']['indicator_a'], 0)
         self.assertEqual(data['user2']['indicator_b'], 1)
 
-    def test_as_names(self):
+    def test_alias(self):
         filters = ["date < :enddate"]
         filter_values = {"enddate": date(2013, 04, 01)}
-        vc = ViewContext("user_table", filters=filters, group_by=["user"])
+        vc = QueryContext("user_table", filters=filters, group_by=["user"])
         user = SimpleColumn("user")
-        i_sum_a = SumColumn("indicator_a", as_name="sum_a")
-        i_count_a = CountColumn("indicator_a", as_name="count_a")
+        i_sum_a = SumColumn("indicator_a", alias="sum_a")
+        i_count_a = CountColumn("indicator_a", alias="count_a")
         vc.append_column(user)
         vc.append_column(i_sum_a)
         vc.append_column(i_count_a)
@@ -107,7 +107,7 @@ class TestSqlAgg(DataTestCase, unittest.TestCase):
 
     def test_custom_view(self):
         from sqlalchemy import func
-        vc = ViewContext("user_table", filters=None, group_by=[])
+        vc = QueryContext("user_table", filters=None, group_by=[])
 
         class CustomColumn(BaseColumnColumn):
             aggregate_fn = lambda view, col: func.avg(col) / func.sum(col)
@@ -121,7 +121,7 @@ class TestSqlAgg(DataTestCase, unittest.TestCase):
     def test_multiple_tables(self):
         filters = ["date < :enddate"]
         filter_values = {"enddate": date(2013, 04, 01)}
-        vc = ViewContext("user_table", filters=filters, group_by=["user"])
+        vc = QueryContext("user_table", filters=filters, group_by=["user"])
         user = SimpleColumn("user")
         i_a = SumColumn("indicator_a")
 
@@ -140,7 +140,7 @@ class TestSqlAgg(DataTestCase, unittest.TestCase):
         self.assertEqual(data['region2']['indicator_a'], 2)
 
     def get_user_data(self, filter_values, filters):
-        vc = ViewContext("user_table", filters=filters, group_by=["user"])
+        vc = QueryContext("user_table", filters=filters, group_by=["user"])
         user = SimpleColumn("user")
         i_a = SumColumn("indicator_a")
         i_b = CountColumn("indicator_b")
@@ -150,7 +150,7 @@ class TestSqlAgg(DataTestCase, unittest.TestCase):
         return vc.resolve(self.session.connection(), filter_values)
 
     def get_region_data(self):
-        vc = ViewContext("region_table", filters=None, group_by=["region", "sub_region"])
+        vc = QueryContext("region_table", filters=None, group_by=["region", "sub_region"])
         region = SimpleColumn("region")
         sub_region = SimpleColumn("sub_region")
         i_a = SumColumn("indicator_a")

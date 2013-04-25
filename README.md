@@ -14,27 +14,27 @@ You can use sql-agg to extract aggregated data from the table as follows:
 ```python
 from datetime import date
 from sqlagg import *
-from sqlagg.views import *
+from sqlagg.columns import *
 
-# create the views
-user = SimpleView("user")
-i_a = SumView("column_a")
-i_b = CountView("column_b")
+# create the columns
+user = SimpleColumn("user")
+i_a = SumColumn("column_a")
+i_b = CountColumn("column_b")
 
-# initialise the view context and add the views to it
-vc = ViewContext("table_name",
+# initialise the query context and add the columns to it
+vc = QueryContext("table_name",
     filters=["date > :startdate", "date < :enddate"],
     group_by=["user"])
-vc.append_view(yuser)
-vc.append_view(i_a)
-vc.append_view(i_b)
+vc.append_column(yuser)
+vc.append_column(i_a)
+vc.append_column(i_b)
 
 filter_values={
     "startdate": date(2012, 01, 01),
     "enddate": date(2012, 03, 01)
     }
 
-# resolve the view context with the filter values (connection is an SQLAlchemy connection)
+# resolve the query context with the filter values (connection is an SQLAlchemy connection)
 vc.resolve(connection, filter_values=filter_values)
 data = vc.data
 ```
@@ -53,15 +53,15 @@ The resultant `data` variable will be a dictionary as follows:
 }
 
 ## Multi-level grouping
-Multi-level grouping can be done by adding multiple SimpleView's to the ViewContext as well as multiple column names in
-the 'group_by' parameter of the ViewContext.
+Multi-level grouping can be done by adding multiple SimpleColumn's to the QueryContext as well as multiple column names in
+the 'group_by' parameter of the QueryContext.
 
 ```python
-region = SimpleView("region")
-sub_region = SimpleView("sub_region")
-column_a = SumView("column_a")
+region = SimpleColumn("region")
+sub_region = SimpleColumn("sub_region")
+column_a = SumColumn("column_a")
 
-vc = ViewContext("table_name"
+vc = QueryContext("table_name"
     filters=None,
     group_by=["region","sub_region"])
 ```
@@ -85,36 +85,36 @@ The resultant data would look as follows:
 }
 ```
 
-## Views in detail
-For each view you can specify the `table`, `filters` and also `group_by` fields. Using these features you can supply
+## Columns in detail
+For each column you can specify the `table`, `filters` and also `group_by` fields. Using these features you can supply
 different filters per column or select data from different columns.
 
 ### Different filters
 ```python
-view_a = SumView("column_a")
-view_b = SumView("column_b", filters="date < '{enddate}'")
+column_a = SumColumn("column_a")
+column_b = SumColumn("column_b", filters="date < '{enddate}'")
 ```
 
-In this case `view_a` will get the filters supplied to the `ViewContext` while `view_b` will be resolved with its own
+In this case `column_a` will get the filters supplied to the `QueryContext` while `column_b` will be resolved with its own
 filters. This will result in two queries being run on the database.
 
 ## Different tables
-It is possible to select data from different tables by providing views with different `table_name`s.
+It is possible to select data from different tables by providing columns with different `table_name`s.
 
 ```python
-view_a = SumView("column_a")
-view_b = SumView("column_b", table_name="table_b", group_by=["user"]
+column_a = SumColumn("column_a")
+column_b = SumColumn("column_b", table_name="table_b", group_by=["user"]
 ```
 
-Here `view_a` will be selected from the table configured in the ViewContext while `view_b` will be selected from
+Here `column_a` will be selected from the table configured in the QueryContext while `column_b` will be selected from
 *table_name* and will be grouped by *user*. This will result in two queries being run on the database.
 
 ## As Name
-It is possible to use the same column in multiple views by specifying the `as_name` argument of the view.
+It is possible to use the same column in multiple columns by specifying the `as_name` argument of the column.
 
 ```python
-sum_a = SumView("column_a", as_name="sum_a")
-count_a = CountView("column_a", as_name="count_a")
+sum_a = SumColumn("column_a", as_name="sum_a")
+count_a = CountColumn("column_a", as_name="count_a")
 ```
 
 The resulting data will use the `as_name` keys to reference the values.

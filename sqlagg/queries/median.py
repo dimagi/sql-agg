@@ -54,9 +54,9 @@ class MedianQueryMeta(QueryMeta):
     ID_COL = "id"
     VAL_COL = "value"
 
-    def append_column(self, view):
-        self.key = view.key
-        self.as_name = view.as_name or self.key
+    def append_column(self, column):
+        self.key = column.key
+        self.alias = column.alias or self.key
 
     def execute(self, metadata, connection, filter_values):
         median_table = self._build_median_table(metadata)
@@ -162,7 +162,7 @@ class MedianQueryMeta(QueryMeta):
         for group in self.group_by:
             final_query.append_column(t_upper.c[group])
 
-        final_query.append_column(((t_upper.c[self.VAL_COL] + t_lower.c[self.VAL_COL]) / 2.0).label(self.as_name))
+        final_query.append_column(((t_upper.c[self.VAL_COL] + t_lower.c[self.VAL_COL]) / 2.0).label(self.alias))
         final_query.append_whereclause(median_id_table.c["upper"] == t_upper.c[self.ID_COL])
         final_query.append_whereclause(median_id_table.c["lower"] == t_lower.c[self.ID_COL])
         return final_query

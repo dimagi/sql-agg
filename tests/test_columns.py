@@ -59,6 +59,6 @@ class TestSqlAggViews(DataTestCase, unittest.TestCase):
         self.assertEqual(data[view.key], expected)
 
     def _get_view_data(self, view):
-        vc = ViewContext("user_table")
+        vc = QueryContext("user_table")
         vc.append_column(view)
         return vc.resolve(self.session.connection())

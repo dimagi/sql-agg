@@ -9,15 +9,15 @@ class SqlColumn(object):
     """
     Simple representation of a column with a name and an aggregation function which can be None.
     """
-    def __init__(self, column_name, aggregate_fn=None, as_name=None):
+    def __init__(self, column_name, aggregate_fn=None, alias=None):
         self.column_name = column_name
-        self.as_name = as_name or column_name
+        self.alias = alias or column_name
         self.aggregate_fn = aggregate_fn
 
     def build_column(self, sql_table):
         table_column = sql_table.c[self.column_name]
         sql_col = self.aggregate_fn(table_column) if self.aggregate_fn else table_column
-        return sql_col.label(self.as_name)
+        return sql_col.label(self.alias)
 
     def __repr__(self):
         return "SqlColumn(column_name=%s)" % self.column_name
@@ -44,8 +44,8 @@ class SimpleQueryMeta(QueryMeta):
         super(SimpleQueryMeta, self).__init__(table_name, filters, group_by)
         self.columns = []
 
-    def append_column(self, view):
-        self.columns.append(SqlColumn(view.key, view.aggregate_fn, view.as_name))
+    def append_column(self, column):
+        self.columns.append(SqlColumn(column.key, column.aggregate_fn, column.alias))
 
     def _check(self):
         groups = list(self.group_by)
@@ -54,7 +54,7 @@ class SimpleQueryMeta(QueryMeta):
                 groups.remove(c.column_name)
 
         for g in groups:
-            self.columns.append(SqlColumn(g, aggregate_fn=None, as_name=g))
+            self.columns.append(SqlColumn(g, aggregate_fn=None, alias=g))
 
     def execute(self, metadata, connection, filter_values):
         query = self._build_query(metadata)
@@ -82,25 +82,25 @@ class SimpleQueryMeta(QueryMeta):
                (self.columns, self.filters, self.group_by, self.table_name)
 
 
-class ViewContext(object):
+class QueryContext(object):
     def __init__(self, table, filters={}, group_by=[]):
         self.table_name = table
         self.filters = filters
         self.group_by = group_by
         self.query_meta = {}
 
-    def append_column(self, view):
-        query_key = view.view_key
-        query = self.query_meta.setdefault(query_key, self._new_query_meta(view))
-        query.append_column(view)
+    def append_column(self, column):
+        query_key = column.column_key
+        query = self.query_meta.setdefault(query_key, self._new_query_meta(column))
+        query.append_column(column)
 
-    def _new_query_meta(self, view):
-        if isinstance(view, QueryColumn):
-            return view.get_query_meta(self.table_name, self.filters, self.group_by)
+    def _new_query_meta(self, column):
+        if isinstance(column, QueryColumn):
+            return column.get_query_meta(self.table_name, self.filters, self.group_by)
         else:
-            table_name = view.table_name or self.table_name
-            filters = view.filters or self.filters
-            group_by = view.group_by or self.group_by
+            table_name = column.table_name or self.table_name
+            filters = column.filters or self.filters
+            group_by = column.group_by or self.group_by
             return SimpleQueryMeta(table_name, filters, group_by)
 
     @property
@@ -133,7 +133,7 @@ class ViewContext(object):
 
 class QueryColumn(object):
     @property
-    def view_key(self):
+    def column_key(self):
         raise NotImplementedError()
 
     def get_query_meta(self):
