@@ -1,7 +1,11 @@
 import time
+import logging
 from sqlalchemy import select, Table, Column, INT, and_, func, alias
 from sqlagg import QueryMeta
 from .alchemy_extensions import InsertFromSelect, func_ext
+
+query_logger = logging.getLogger("sqlagg.queries")
+logger = logging.getLogger("sqlagg")
 
 
 class MedianQueryMeta(QueryMeta):
@@ -50,7 +54,7 @@ class MedianQueryMeta(QueryMeta):
     ID_COL = "id"
     VAL_COL = "value"
 
-    def append_view(self, view):
+    def append_column(self, view):
         self.key = view.key
         self.as_name = view.as_name or self.key
 
@@ -63,6 +67,7 @@ class MedianQueryMeta(QueryMeta):
 
         median_query = self._build_median_query(median_id_table, median_table)
 
+        query_logger.debug("MedianQuery:\n%s", median_query)
         result = connection.execute(median_query).fetchall()
         return result
 
@@ -85,6 +90,7 @@ class MedianQueryMeta(QueryMeta):
             column = origin_table.c[group]
             median_table.append_column(Column(group, column.type))
 
+        logger.debug("Building median table: %s", table_name)
         median_table.create()
 
         return median_table
@@ -106,6 +112,9 @@ class MedianQueryMeta(QueryMeta):
 
         query.append_order_by(origin_table.c[self.key])
         from_select = InsertFromSelect(median_table, query, ["value"] + self.group_by)
+
+        logger.debug("Populate median table")
+        query_logger.debug("MedianQuery: populate median table:\n%s", from_select)
         connection.execute(from_select, **filter_values)
 
     def _build_median_id_table(self, metadata):
@@ -118,6 +127,7 @@ class MedianQueryMeta(QueryMeta):
                                 Column("lower", INT),
                                 prefixes=["TEMPORARY"])
 
+        logger.debug("Building median ID table: %s", table_name)
         median_id_table.create()
         return median_id_table
 
@@ -132,7 +142,11 @@ class MedianQueryMeta(QueryMeta):
                        from_obj=median_table)
         for group in self.group_by:
             query.append_group_by(median_table.c[group])
-        connection.execute(InsertFromSelect(median_id_table, query, ["upper", "lower"]))
+        from_select = InsertFromSelect(median_id_table, query, ["upper", "lower"])
+
+        logger.debug("Populate median ID table")
+        query_logger.debug("MedianQuery: populate median ID table:\n%s", from_select)
+        connection.execute(from_select)
 
     def _build_median_query(self, median_id_table, median_table):
         """

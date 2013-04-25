@@ -2,7 +2,7 @@
 import sqlalchemy
 import logging
 
-logger = logging.getLogger(__name__)
+query_logger = logging.getLogger("sqlagg.queries")
 
 
 class SqlColumn(object):
@@ -29,7 +29,7 @@ class QueryMeta(object):
         self.group_by = group_by
         self.table_name = table_name
 
-    def append_view(self, view):
+    def append_column(self, view):
         pass
 
     def execute(self, metadata, connection, filter_values):
@@ -44,7 +44,7 @@ class SimpleQueryMeta(QueryMeta):
         super(SimpleQueryMeta, self).__init__(table_name, filters, group_by)
         self.columns = []
 
-    def append_view(self, view):
+    def append_column(self, view):
         self.columns.append(SqlColumn(view.key, view.aggregate_fn, view.as_name))
 
     def _check(self):
@@ -58,6 +58,7 @@ class SimpleQueryMeta(QueryMeta):
 
     def execute(self, metadata, connection, filter_values):
         query = self._build_query(metadata)
+        query_logger.debug("SimpleQuery:\n%s", query)
         return connection.execute(query, **filter_values).fetchall()
 
     def _build_query(self, metadata):
@@ -87,15 +88,14 @@ class ViewContext(object):
         self.filters = filters
         self.group_by = group_by
         self.query_meta = {}
-        self.data = {}
 
-    def append_view(self, view):
+    def append_column(self, view):
         query_key = view.view_key
         query = self.query_meta.setdefault(query_key, self._new_query_meta(view))
-        query.append_view(view)
+        query.append_column(view)
 
     def _new_query_meta(self, view):
-        if isinstance(view, QueryView):
+        if isinstance(view, QueryColumn):
             return view.get_query_meta(self.table_name, self.filters, self.group_by)
         else:
             table_name = view.table_name or self.table_name
@@ -115,20 +115,23 @@ class ViewContext(object):
     def resolve(self, connection, filter_values=None):
         self.connection = connection
 
+        data = {}
         for qm in self.query_meta.values():
             result = qm.execute(self.metadata, self.connection, filter_values or {})
 
             for r in result:
-                row = self.data
+                row = data
                 for group in qm.group_by:
                     row = row.setdefault(r[group], {})
                 row.update(kvp for kvp in r.items())
+
+        return data
 
     def __str__(self):
         return str(self.query_meta)
 
 
-class QueryView(object):
+class QueryColumn(object):
     @property
     def view_key(self):
         raise NotImplementedError()

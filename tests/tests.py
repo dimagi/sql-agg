@@ -7,7 +7,7 @@ from datetime import date
 from models import metadata, UserTable, RegionTable
 from fixtures import RegionData, UserData
 from sqlagg import *
-from sqlagg.views import *
+from sqlagg.columns import *
 
 engine = create_engine('sqlite:///:memory:')
 metadata.bind = engine
@@ -75,14 +75,13 @@ class TestSqlAgg(DataTestCase, unittest.TestCase):
         filters = ["date < :enddate"]
         filter_values = {"enddate": date(2013, 02, 01)}
         vc = ViewContext("user_table", filters=filters, group_by=["user"])
-        user = SimpleView("user")
-        i_a = SumView("indicator_a")
-        i_b = SumView("indicator_b", filters=["date > :enddate"])
-        vc.append_view(user)
-        vc.append_view(i_a)
-        vc.append_view(i_b)
-        vc.resolve(self.session.connection(), filter_values)
-        data = vc.data
+        user = SimpleColumn("user")
+        i_a = SumColumn("indicator_a")
+        i_b = SumColumn("indicator_b", filters=["date > :enddate"])
+        vc.append_column(user)
+        vc.append_column(i_a)
+        vc.append_column(i_b)
+        data = vc.resolve(self.session.connection(), filter_values)
 
         self.assertEqual(data['user1']['indicator_a'], 1)
         self.assertNotIn('indicator_b', data['user1'])
@@ -93,14 +92,13 @@ class TestSqlAgg(DataTestCase, unittest.TestCase):
         filters = ["date < :enddate"]
         filter_values = {"enddate": date(2013, 04, 01)}
         vc = ViewContext("user_table", filters=filters, group_by=["user"])
-        user = SimpleView("user")
-        i_sum_a = SumView("indicator_a", as_name="sum_a")
-        i_count_a = CountView("indicator_a", as_name="count_a")
-        vc.append_view(user)
-        vc.append_view(i_sum_a)
-        vc.append_view(i_count_a)
-        vc.resolve(self.session.connection(), filter_values)
-        data = vc.data
+        user = SimpleColumn("user")
+        i_sum_a = SumColumn("indicator_a", as_name="sum_a")
+        i_count_a = CountColumn("indicator_a", as_name="count_a")
+        vc.append_column(user)
+        vc.append_column(i_sum_a)
+        vc.append_column(i_count_a)
+        data = vc.resolve(self.session.connection(), filter_values)
 
         self.assertEqual(data['user1']['sum_a'], 4)
         self.assertEqual(data['user1']['count_a'], 2)
@@ -111,31 +109,30 @@ class TestSqlAgg(DataTestCase, unittest.TestCase):
         from sqlalchemy import func
         vc = ViewContext("user_table", filters=None, group_by=[])
 
-        class CustomView(BaseColumnView):
+        class CustomColumn(BaseColumnColumn):
             aggregate_fn = lambda view, col: func.avg(col) / func.sum(col)
 
-        agg_view = CustomView("indicator_a")
-        vc.append_view(agg_view)
-        vc.resolve(self.session.connection(), None)
+        agg_view = CustomColumn("indicator_a")
+        vc.append_column(agg_view)
+        data = vc.resolve(self.session.connection(), None)
 
-        self.assertEqual(vc.data["indicator_a"], 0.25)
+        self.assertEqual(data["indicator_a"], 0.25)
 
     def test_multiple_tables(self):
         filters = ["date < :enddate"]
         filter_values = {"enddate": date(2013, 04, 01)}
         vc = ViewContext("user_table", filters=filters, group_by=["user"])
-        user = SimpleView("user")
-        i_a = SumView("indicator_a")
+        user = SimpleColumn("user")
+        i_a = SumColumn("indicator_a")
 
-        region = SimpleView("region", table_name="region_table", group_by=["region"])
-        i_a_r = SumView("indicator_a", table_name="region_table", group_by=["region"])
-        vc.append_view(user)
-        vc.append_view(i_a)
+        region = SimpleColumn("region", table_name="region_table", group_by=["region"])
+        i_a_r = SumColumn("indicator_a", table_name="region_table", group_by=["region"])
+        vc.append_column(user)
+        vc.append_column(i_a)
 
-        vc.append_view(region)
-        vc.append_view(i_a_r)
-        vc.resolve(self.session.connection(), filter_values)
-        data = vc.data
+        vc.append_column(region)
+        vc.append_column(i_a_r)
+        data = vc.resolve(self.session.connection(), filter_values)
 
         self.assertEqual(data['user1']['indicator_a'], 4)
         self.assertEqual(data['user2']['indicator_a'], 2)
@@ -144,26 +141,22 @@ class TestSqlAgg(DataTestCase, unittest.TestCase):
 
     def get_user_data(self, filter_values, filters):
         vc = ViewContext("user_table", filters=filters, group_by=["user"])
-        user = SimpleView("user")
-        i_a = SumView("indicator_a")
-        i_b = CountView("indicator_b")
-        vc.append_view(user)
-        vc.append_view(i_a)
-        vc.append_view(i_b)
-        vc.resolve(self.session.connection(), filter_values)
-        data = vc.data
-        return data
+        user = SimpleColumn("user")
+        i_a = SumColumn("indicator_a")
+        i_b = CountColumn("indicator_b")
+        vc.append_column(user)
+        vc.append_column(i_a)
+        vc.append_column(i_b)
+        return vc.resolve(self.session.connection(), filter_values)
 
     def get_region_data(self):
         vc = ViewContext("region_table", filters=None, group_by=["region", "sub_region"])
-        region = SimpleView("region")
-        sub_region = SimpleView("sub_region")
-        i_a = SumView("indicator_a")
-        i_b = CountView("indicator_b")
-        vc.append_view(region)
-        vc.append_view(sub_region)
-        vc.append_view(i_a)
-        vc.append_view(i_b)
-        vc.resolve(self.session.connection(), None)
-        data = vc.data
-        return data
+        region = SimpleColumn("region")
+        sub_region = SimpleColumn("sub_region")
+        i_a = SumColumn("indicator_a")
+        i_b = CountColumn("indicator_b")
+        vc.append_column(region)
+        vc.append_column(sub_region)
+        vc.append_column(i_a)
+        vc.append_column(i_b)
+        return vc.resolve(self.session.connection(), None)

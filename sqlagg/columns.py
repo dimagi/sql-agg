@@ -1,9 +1,9 @@
 from sqlalchemy import func, distinct
-from sqlagg import QueryView
+from sqlagg import QueryColumn
 from queries import MedianQueryMeta
 
 
-class BaseColumnView(object):
+class BaseColumnColumn(object):
     aggregate_fn = None
 
     def __init__(self, key, as_name=None, table_name=None, filters=None, group_by=None):
@@ -20,7 +20,7 @@ class BaseColumnView(object):
         return self.table_name, str(self.filters), str(self.group_by)
 
 
-class CustomQueryView(BaseColumnView, QueryView):
+class CustomQueryColumn(BaseColumnColumn, QueryColumn):
     query_cls = None
     name = None
 
@@ -35,34 +35,34 @@ class CustomQueryView(BaseColumnView, QueryView):
         return self.name, self.key, self.table_name, str(self.filters), str(self.group_by)
 
 
-class SimpleView(BaseColumnView):
+class SimpleColumn(BaseColumnColumn):
     pass
 
 
-class SumView(BaseColumnView):
+class SumColumn(BaseColumnColumn):
     aggregate_fn = func.sum
 
 
-class CountView(BaseColumnView):
+class CountColumn(BaseColumnColumn):
     aggregate_fn = func.count
 
 
-class MaxView(BaseColumnView):
+class MaxColumn(BaseColumnColumn):
     aggregate_fn = func.max
 
 
-class MinView(BaseColumnView):
+class MinColumn(BaseColumnColumn):
     aggregate_fn = func.min
 
 
-class MeanView(BaseColumnView):
+class MeanColumn(BaseColumnColumn):
     aggregate_fn = func.avg
 
 
-class UniqueView(BaseColumnView):
+class UniqueColumn(BaseColumnColumn):
     aggregate_fn = lambda view, column: func.count(distinct(column))
 
 
-class MedianView(CustomQueryView):
+class MedianColumn(CustomQueryColumn):
     query_cls = MedianQueryMeta
     name = "median"

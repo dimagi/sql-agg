@@ -1,2 +1,2 @@
 from .base import *
-from .views import SumView, CountView, MaxView, MinView, MeanView, MedianView, UniqueView
+from .columns import SumColumn, CountColumn, MaxColumn, MinColumn, MeanColumn, MedianColumn, UniqueColumn
