@@ -1,28 +1,15 @@
 import unittest
-from fixture import DataTestCase, SQLAlchemyFixture
-from sqlalchemy import create_engine
+from . import BaseTest
 from sqlalchemy.orm import scoped_session, sessionmaker
 
-from models import metadata, UserTable, RegionTable
-from fixtures import RegionData, UserData
 from sqlagg import *
 
-engine = create_engine('sqlite:///:memory:')
-metadata.bind = engine
-metadata.create_all()
 
-db_fixture = SQLAlchemyFixture(
-    engine=metadata.bind,
-    env={"UserData": UserTable, "RegionData": RegionTable})
-
-
-class TestSqlAggViews(DataTestCase, unittest.TestCase):
-    fixture = db_fixture
-    datasets = [UserData, RegionData]
+class TestSqlAggViews(BaseTest, unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        Session = scoped_session(sessionmaker(bind=metadata.bind, autoflush=True))
+        Session = scoped_session(sessionmaker(bind=cls.metadata().bind, autoflush=True))
         cls.session = Session()
 
     def test_sum(self):
@@ -56,7 +43,7 @@ class TestSqlAggViews(DataTestCase, unittest.TestCase):
 
     def _test_view(self, view, expected):
         data = self._get_view_data(view)
-        self.assertEqual(data[view.key], expected)
+        self.assertEqual(view.get_value(data), expected)
 
     def _get_view_data(self, view):
         vc = QueryContext("user_table")

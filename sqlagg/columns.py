@@ -3,7 +3,7 @@ from .base import QueryColumn
 from queries import MedianQueryMeta
 
 
-class BaseColumnColumn(object):
+class BaseColumn(object):
     aggregate_fn = None
 
     def __init__(self, key, alias=None, table_name=None, filters=None, group_by=None):
@@ -19,8 +19,12 @@ class BaseColumnColumn(object):
     def column_key(self):
         return self.table_name, str(self.filters), str(self.group_by)
 
+    def get_value(self, row):
+        row_key = self.alias or self.key
+        return row[row_key] if row else None
 
-class CustomQueryColumn(BaseColumnColumn, QueryColumn):
+
+class CustomQueryColumn(BaseColumn, QueryColumn):
     query_cls = None
     name = None
 
@@ -35,31 +39,31 @@ class CustomQueryColumn(BaseColumnColumn, QueryColumn):
         return self.name, self.key, self.table_name, str(self.filters), str(self.group_by)
 
 
-class SimpleColumn(BaseColumnColumn):
+class SimpleColumn(BaseColumn):
     pass
 
 
-class SumColumn(BaseColumnColumn):
+class SumColumn(BaseColumn):
     aggregate_fn = func.sum
 
 
-class CountColumn(BaseColumnColumn):
+class CountColumn(BaseColumn):
     aggregate_fn = func.count
 
 
-class MaxColumn(BaseColumnColumn):
+class MaxColumn(BaseColumn):
     aggregate_fn = func.max
 
 
-class MinColumn(BaseColumnColumn):
+class MinColumn(BaseColumn):
     aggregate_fn = func.min
 
 
-class MeanColumn(BaseColumnColumn):
+class MeanColumn(BaseColumn):
     aggregate_fn = func.avg
 
 
-class UniqueColumn(BaseColumnColumn):
+class UniqueColumn(BaseColumn):
     aggregate_fn = lambda view, column: func.count(distinct(column))
 
 

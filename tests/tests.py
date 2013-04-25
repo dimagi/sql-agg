@@ -1,30 +1,16 @@
 import unittest
-from fixture import DataTestCase, SQLAlchemyFixture
-from sqlalchemy import create_engine
+from . import BaseTest
 from sqlalchemy.orm import scoped_session, sessionmaker
 from datetime import date
-
-from models import metadata, UserTable, RegionTable
-from fixtures import RegionData, UserData
+from models import metadata
 from sqlagg import *
 from sqlagg.columns import *
 
-engine = create_engine('sqlite:///:memory:')
-metadata.bind = engine
-metadata.create_all()
 
-db_fixture = SQLAlchemyFixture(
-    engine=metadata.bind,
-    env={"UserData": UserTable, "RegionData": RegionTable})
-
-
-class TestSqlAgg(DataTestCase, unittest.TestCase):
-    fixture = db_fixture
-    datasets = [UserData, RegionData]
-
+class TestSqlAgg(BaseTest, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        Session = scoped_session(sessionmaker(bind=metadata.bind, autoflush=True))
+        Session = scoped_session(sessionmaker(bind=cls.metadata().bind, autoflush=True))
         cls.session = Session()
 
     def test_single_group(self):
@@ -109,7 +95,7 @@ class TestSqlAgg(DataTestCase, unittest.TestCase):
         from sqlalchemy import func
         vc = QueryContext("user_table", filters=None, group_by=[])
 
-        class CustomColumn(BaseColumnColumn):
+        class CustomColumn(BaseColumn):
             aggregate_fn = lambda view, col: func.avg(col) / func.sum(col)
 
         agg_view = CustomColumn("indicator_a")
