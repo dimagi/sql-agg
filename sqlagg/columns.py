@@ -1,5 +1,5 @@
 from sqlalchemy import func, distinct
-from sqlagg import QueryColumn
+from .base import QueryColumn
 from queries import MedianQueryMeta
 
 
