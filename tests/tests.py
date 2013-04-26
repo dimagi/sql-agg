@@ -43,19 +43,17 @@ class TestSqlAgg(BaseTest, unittest.TestCase):
     def test_multiple_groups(self):
         data = self.get_region_data()
 
-        region1 = data['region1']
-        region1_a = region1['region1_a']
-        self.assertEqual(region1_a['indicator_a'], 1)
-        self.assertEqual(region1_a['indicator_b'], 2)
+        r1_a = ('region1', 'region1_a')
+        self.assertEqual(data[r1_a]['indicator_a'], 1)
+        self.assertEqual(data[r1_a]['indicator_b'], 2)
 
-        region1_b = region1['region1_b']
-        self.assertEqual(region1_b['indicator_a'], 4)
-        self.assertEqual(region1_b['indicator_b'], 2)
+        r1_b = ('region1', 'region1_b')
+        self.assertEqual(data[r1_b]['indicator_a'], 4)
+        self.assertEqual(data[r1_b]['indicator_b'], 2)
 
-        region2 = data['region2']
-        region2_a = region2['region2_a']
-        self.assertEqual(region2_a['indicator_a'], 2)
-        self.assertEqual(region2_a['indicator_b'], 1)
+        r2_a = ('region2', 'region2_a')
+        self.assertEqual(data[r2_a]['indicator_a'], 2)
+        self.assertEqual(data[r2_a]['indicator_b'], 1)
 
     def test_different_filters(self):
         filters = ["date < :enddate"]

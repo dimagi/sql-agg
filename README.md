@@ -119,5 +119,7 @@ count_a = CountColumn("column_a", as_name="count_a")
 
 The resulting data will use the `as_name` keys to reference the values.
 
+TODO: custom queries, AliasColumn
+
 
 

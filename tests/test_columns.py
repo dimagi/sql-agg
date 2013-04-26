@@ -6,11 +6,13 @@ from sqlagg import *
 
 
 class TestSqlAggViews(BaseTest, unittest.TestCase):
-
     @classmethod
     def setUpClass(cls):
         Session = scoped_session(sessionmaker(bind=cls.metadata().bind, autoflush=True))
         cls.session = Session()
+
+    def test_missing_data(self):
+        self.assertIsNone(SumColumn("not there").get_value({}))
 
     def test_sum(self):
         self._test_view(SumColumn("indicator_a"), 6)
@@ -40,6 +42,32 @@ class TestSqlAggViews(BaseTest, unittest.TestCase):
         data = self._get_view_data(MedianColumn("indicator_a", group_by=["user"]))
         self.assertEqual(data["user1"]["indicator_a"], 2)
         self.assertEqual(data["user2"]["indicator_a"], 1)
+
+    def test_alias_column(self):
+        vc = QueryContext("user_table")
+        i_a = SumColumn("indicator_a")
+        i_a2 = AliasColumn("indicator_a")
+        vc.append_column(i_a)
+        vc.append_column(i_a2)
+        data = vc.resolve(self.session.connection())
+        self.assertEqual(i_a.get_value(data), 6)
+        self.assertEqual(i_a2.get_value(data), 6)
+
+    def test_alias_column_with_aliases(self):
+        vc = QueryContext("user_table")
+        i_a = SumColumn("indicator_a", alias="sum_a")
+        i_a2 = AliasColumn("sum_a")
+        vc.append_column(i_a)
+        vc.append_column(i_a2)
+        data = vc.resolve(self.session.connection())
+        self.assertEqual(i_a.get_value(data), 6)
+        self.assertEqual(i_a2.get_value(data), 6)
+
+    def test_aggregate_column(self):
+        col = AggregateColumn(lambda x, y: x + y,
+                              SumColumn("indicator_a"),
+                              SumColumn("indicator_c"))
+        self._test_view(col, 9)
 
     def _test_view(self, view, expected):
         data = self._get_view_data(view)
