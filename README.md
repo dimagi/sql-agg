@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/dimagi/sql-agg.png)](https://travis-ci.org/dimagi/sql-agg)
+
 # sql-agg
 
 ## Basic usage
