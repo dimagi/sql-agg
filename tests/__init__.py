@@ -8,6 +8,7 @@ engine = create_engine('sqlite:///:memory:')
 metadata.bind = engine
 metadata.create_all()
 
+
 class BaseTest(DataTestCase):
     datasets = [UserData, RegionData]
     fixture = SQLAlchemyFixture(
