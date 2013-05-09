@@ -7,13 +7,18 @@ setup(
     name='sqlagg',
     version='0.1.0',
     description='SQL aggregation tool',
-    author='Simon Kelly',
-    author_email='skelly@dimagi.com',
+    author='Dimagi',
+    author_email='dev@dimagi.com',
     url='http://github.com/dimagi/sql-agg',
     packages=['sqlagg'],
+    test_suite='tests',
+    test_loader='unittest2:TestLoader',
     license='MIT',
     install_requires=[
         'SQLAlchemy>=0.8.0',
+    ],
+    tests_require=[
+        'unittest2',
         'SQLAlchemy-Fixtures>=0.1.5',
         'fixture>=1.4'
     ]

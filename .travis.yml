@@ -1,8 +1,13 @@
 language: python
 python:
+ - "2.6"
  - "2.7"
 install:
- - pip install . --use-mirrors
+ - "sudo apt-get install libevent-dev"
+ - "pip install -e ."
+ - "pip install coverage coveralls"
 script:
- - python -m unittest discover
-
+ - "coverage run setup.py test"
+after_success:
+ - coverage report
+ - coveralls
