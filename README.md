@@ -1,6 +1,6 @@
-[![Build Status](https://travis-ci.org/dimagi/sql-agg.png)](https://travis-ci.org/dimagi/sql-agg)
-
 # sql-agg
+[![Build Status](https://travis-ci.org/dimagi/sql-agg.png)](https://travis-ci.org/dimagi/sql-agg)
+[![Test coverage](https://coveralls.io/repos/dimagi/sql-agg/badge.png?branch=master)](https://coveralls.io/r/dimagi/sql-agg)
 
 ## Basic usage
 Assuming you have the following database table:
