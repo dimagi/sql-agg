@@ -1,6 +1,6 @@
 [run]
 branch = True
-source = fluff
+source = sqlagg
 
 [html]
 directory = coverage-report

@@ -1,4 +1,4 @@
-import unittest
+from unittest2 import TestCase
 from . import BaseTest
 from sqlalchemy.orm import scoped_session, sessionmaker
 from datetime import date
@@ -7,7 +7,7 @@ from sqlagg import *
 from sqlagg.columns import *
 
 
-class TestSqlAgg(BaseTest, unittest.TestCase):
+class TestSqlAgg(BaseTest, TestCase):
     @classmethod
     def setUpClass(cls):
         Session = scoped_session(sessionmaker(bind=cls.metadata().bind, autoflush=True))

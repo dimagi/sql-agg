@@ -1,11 +1,11 @@
-import unittest
+from unittest2 import TestCase
 from . import BaseTest
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 from sqlagg import *
 
 
-class TestSqlAggViews(BaseTest, unittest.TestCase):
+class TestSqlAggViews(BaseTest, TestCase):
     @classmethod
     def setUpClass(cls):
         Session = scoped_session(sessionmaker(bind=cls.metadata().bind, autoflush=True))
