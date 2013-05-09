@@ -10,8 +10,7 @@ user_table = Table("user_table",
                    Column("date", DATE, primary_key=True, autoincrement=False),
                    Column("indicator_a", INT),
                    Column("indicator_b", INT),
-                   Column("indicator_c", INT)
-)
+                   Column("indicator_c", INT))
 
 
 class UserTable(object):
@@ -24,8 +23,7 @@ region_table = Table("region_table",
                      Column("sub_region", String(50), primary_key=True, autoincrement=False),
                      Column("date", DATE, primary_key=True, autoincrement=False),
                      Column("indicator_a", INT),
-                     Column("indicator_b", INT)
-)
+                     Column("indicator_b", INT))
 
 
 class RegionTable(object):

@@ -45,7 +45,7 @@ class func_ext(object):
     @compiles(ceil, 'sqlite')
     def _compile_ceil_sqlite(element, compiler, **kw):
         return """(case when {0} = cast({0} as int) then cast({0} as int)
-                 else 1 + cast({0} as int)
+                 else (1 + cast({0} as int))
             end)""".format(compiler.process(element.clauses))
 
     class floor(ColumnElement):

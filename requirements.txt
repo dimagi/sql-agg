@@ -1,0 +1,6 @@
+sqlalchemy==0.8.1
+SQLAlchemy-Fixtures>=0.1.5
+fixture>=1.4
+nose
+unittest2
+psycopg2

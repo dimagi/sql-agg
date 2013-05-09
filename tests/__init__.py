@@ -4,7 +4,10 @@ from sqlalchemy import create_engine
 from models import metadata, UserTable, RegionTable
 from fixtures import RegionData, UserData
 
-engine = create_engine('sqlite:///:memory:')
+# import logging
+# logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+
+engine = create_engine('postgresql://postgres:@localhost/sqlagg_test')
 metadata.bind = engine
 metadata.create_all()
 
@@ -12,8 +15,8 @@ metadata.create_all()
 class BaseTest(DataTestCase):
     datasets = [UserData, RegionData]
     fixture = SQLAlchemyFixture(
-            engine=metadata.bind,
-            env={"UserData": UserTable, "RegionData": RegionTable})
+        engine=metadata.bind,
+        env={"UserData": UserTable, "RegionData": RegionTable})
 
     @classmethod
     def metadata(cls):

@@ -2,8 +2,6 @@
 import sqlalchemy
 import logging
 
-query_logger = logging.getLogger("sqlagg.queries")
-
 
 class SqlColumn(object):
     """
@@ -59,7 +57,6 @@ class SimpleQueryMeta(QueryMeta):
 
     def execute(self, metadata, connection, filter_values):
         query = self._build_query(metadata)
-        query_logger.debug("SimpleQuery:\n%s", query)
         return connection.execute(query, **filter_values).fetchall()
 
     def _build_query(self, metadata):
@@ -146,7 +143,6 @@ class QueryContext(object):
 
     def __str__(self):
         return str(self.query_meta)
-
 
 
 class SqlAggColumn(object):

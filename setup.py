@@ -20,5 +20,6 @@ setup(
         'nose',
         'SQLAlchemy-Fixtures>=0.1.5',
         'fixture>=1.4'
+        'psycopg2'
     ]
 )

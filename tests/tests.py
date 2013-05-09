@@ -2,7 +2,6 @@ from unittest2 import TestCase
 from . import BaseTest
 from sqlalchemy.orm import scoped_session, sessionmaker
 from datetime import date
-from models import metadata
 from sqlagg import *
 from sqlagg.columns import *
 
@@ -100,7 +99,7 @@ class TestSqlAgg(BaseTest, TestCase):
         vc.append_column(agg_view)
         data = vc.resolve(self.session.connection(), None)
 
-        self.assertEqual(data["indicator_a"], 0.25)
+        self.assertAlmostEqual(float(data["indicator_a"]), float(0.25))
 
     def test_multiple_tables(self):
         filters = ["date < :enddate"]

@@ -1,15 +1,23 @@
-from unittest2 import TestCase
-from . import BaseTest
-from sqlalchemy.orm import scoped_session, sessionmaker
+from unittest2 import TestCase, skip
+from . import BaseTest, engine
+from sqlalchemy.orm import sessionmaker
 
 from sqlagg import *
+Session = sessionmaker()
 
 
 class TestSqlAggViews(BaseTest, TestCase):
-    @classmethod
-    def setUpClass(cls):
-        Session = scoped_session(sessionmaker(bind=cls.metadata().bind, autoflush=True))
-        cls.session = Session()
+    def setUp(self):
+        self.connection = engine.connect()
+        self.trans = self.connection.begin()
+        self.session = Session(bind=self.connection)
+        super(TestSqlAggViews, self).setUp()
+
+    def tearDown(self):
+        super(TestSqlAggViews, self).tearDown()
+        self.trans.commit()
+        self.session.close()
+        self.connection.close()
 
     def test_missing_data(self):
         self.assertIsNone(SumColumn("not there").get_value({}))
@@ -71,7 +79,8 @@ class TestSqlAggViews(BaseTest, TestCase):
 
     def _test_view(self, view, expected):
         data = self._get_view_data(view)
-        self.assertAlmostEqual(view.get_value(data), expected)
+        value = view.get_value(data)
+        self.assertAlmostEqual(float(value), float(expected))
 
     def _get_view_data(self, view):
         vc = QueryContext("user_table")
