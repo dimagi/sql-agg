@@ -71,7 +71,7 @@ class TestSqlAggViews(BaseTest, TestCase):
 
     def _test_view(self, view, expected):
         data = self._get_view_data(view)
-        self.assertEqual(view.get_value(data), expected)
+        self.assertAlmostEqual(view.get_value(data), expected)
 
     def _get_view_data(self, view):
         vc = QueryContext("user_table")
