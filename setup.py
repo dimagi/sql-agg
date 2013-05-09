@@ -19,7 +19,7 @@ setup(
         'unittest2',
         'nose',
         'SQLAlchemy-Fixtures>=0.1.5',
-        'fixture>=1.4'
+        'fixture>=1.4',
         'psycopg2'
     ]
 )
