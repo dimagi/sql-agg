@@ -1,8 +1,9 @@
-from unittest2 import TestCase, skip
+from unittest2 import TestCase
 from . import BaseTest, engine
 from sqlalchemy.orm import sessionmaker
 
 from sqlagg import *
+
 Session = sessionmaker()
 
 
@@ -76,6 +77,20 @@ class TestSqlAggViews(BaseTest, TestCase):
                               SumColumn("indicator_a"),
                               SumColumn("indicator_c"))
         self._test_view(col, 9)
+
+    def test_conditional_column_simple(self):
+        # sum(case user when 'user1' then 1 when 'user2' then 3 else 0)
+        col = SumWhen('user', whens={'user1': 1, 'user2': 3}, else_=0)
+        self._test_view(col, 8)
+
+    def test_conditional_column_complex(self):
+        # sum(case when indicator_a < 1 OR indicator_a > 2 then 1 else 0)
+        col = SumWhen(whens={'user_table.indicator_a < 1 OR user_table.indicator_a > 2': 1}, alias='a')
+        self._test_view(col, 2)
+
+        # sum(case when indicator_a between 1 and 2 then 0 else 1)
+        col = SumWhen(whens={'user_table.indicator_a between 1 and 2': 0}, else_=1, alias='a')
+        self._test_view(col, 2)
 
     def _test_view(self, view, expected):
         data = self._get_view_data(view)
