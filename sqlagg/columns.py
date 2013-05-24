@@ -1,6 +1,6 @@
-from sqlalchemy import func, distinct
+from sqlalchemy import func, distinct, case, text
 from queries import MedianQueryMeta
-from .base import BaseColumn, CustomQueryColumn
+from .base import BaseColumn, CustomQueryColumn, SqlColumn
 
 
 class SimpleColumn(BaseColumn):
@@ -34,3 +34,41 @@ class UniqueColumn(BaseColumn):
 class MedianColumn(CustomQueryColumn):
     query_cls = MedianQueryMeta
     name = "median"
+
+
+class ConditionalAggregation(BaseColumn):
+    def __init__(self, key=None, whens={}, else_=None, *args, **kwargs):
+        super(ConditionalAggregation, self).__init__(key, *args, **kwargs)
+        self.whens = whens
+        self.else_ = else_
+
+        assert self.key or self.alias, "Column must have either a key or an alias"
+
+    @property
+    def sql_column(self):
+        return ConditionalColumn(self.key, self.whens, self.else_, self.aggregate_fn, self.alias)
+
+
+class SumWhen(ConditionalAggregation):
+    aggregate_fn = func.sum
+
+
+class ConditionalColumn(SqlColumn):
+    def __init__(self, column_name, whens, else_, aggregate_fn, alias):
+        self.aggregate_fn = aggregate_fn
+        self.column_name = column_name
+        self.whens = whens
+        self.else_ = else_
+        self.alias = alias or column_name
+
+    def build_column(self, sql_table):
+        if self.column_name:
+            expr = case(value=sql_table.c[self.column_name], whens=self.whens, else_=self.else_)
+        else:
+            whens = {}
+            for when, then in self.whens.items():
+                whens[text(when)] = then
+
+            expr = case(whens=whens, else_=self.else_)
+
+        return self.aggregate_fn(expr).label(self.alias)
