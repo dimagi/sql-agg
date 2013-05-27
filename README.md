@@ -112,16 +112,36 @@ Here `column_a` will be selected from the table configured in the QueryContext w
 *table_name* and will be grouped by *user*. This will result in two queries being run on the database.
 
 ## As Name
-It is possible to use the same column in multiple columns by specifying the `as_name` argument of the column.
+It is possible to use the same column in multiple columns by specifying the `alias` argument of the column.
 
 ```python
-sum_a = SumColumn("column_a", as_name="sum_a")
-count_a = CountColumn("column_a", as_name="count_a")
+sum_a = SumColumn("column_a", alias="sum_a")
+count_a = CountColumn("column_a", alias="count_a")
 ```
 
-The resulting data will use the `as_name` keys to reference the values.
+The resulting data will use the `alias` keys to reference the values.
 
-TODO: custom queries, AliasColumn
+## Conditional / Case columns
+*Simple*
+```python
+num_wheels = SumWhen("vehicle", whens={"unicycle": 1, "bicycle": 2, "car": 4}, else_=0, alias="num_wheels")
+```
+
+*Complex*
+```python
+num_children = SumWhen(whens={"users.age < 13", 1}, else_=0, alias="children")
+```
+
+## Alias and Aggregate columns
+Useful if you want to use a column more than once but don't want to re-calculate its value.
+```python
+sum_a = SumColumn("column_a")
+
+aggregate = AggregateColumn(lambda x, y: x / y,
+                            AliasColumn("column_a"),
+                            SumColumn("column_b")
+```
+TODO: custom queries
 
 
 

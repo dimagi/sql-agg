@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
 import sqlalchemy
-import logging
 
 
 class SqlColumn(object):
+    def build_column(self, sql_table):
+        raise NotImplementedError()
+
+
+class SimpleSqlColumn(SqlColumn):
     """
     Simple representation of a column with a name and an aggregation function which can be None.
     """
@@ -43,7 +47,7 @@ class SimpleQueryMeta(QueryMeta):
         self.columns = []
 
     def append_column(self, column):
-        self.columns.append(SqlColumn(column.key, column.aggregate_fn, column.alias))
+        self.columns.append(column.sql_column)
 
     def _check(self):
         if self.group_by:
@@ -53,7 +57,7 @@ class SimpleQueryMeta(QueryMeta):
                     groups.remove(c.column_name)
 
             for g in groups:
-                self.columns.append(SqlColumn(g, aggregate_fn=None, alias=g))
+                self.columns.append(SimpleSqlColumn(g, aggregate_fn=None, alias=g))
 
     def execute(self, metadata, connection, filter_values):
         query = self._build_query(metadata)
@@ -73,6 +77,9 @@ class SimpleQueryMeta(QueryMeta):
         if self.filters:
             for filter in self.filters:
                 query.append_whereclause(filter)
+
+        if not query.froms:
+            query = query.select_from(table)
 
         return query
 
@@ -174,6 +181,10 @@ class BaseColumn(SqlAggColumn):
     @property
     def column_key(self):
         return self.table_name, str(self.filters), str(self.group_by)
+
+    @property
+    def sql_column(self):
+        return SimpleSqlColumn(self.key, self.aggregate_fn, self.alias)
 
     def get_value(self, row):
         row_key = self.alias or self.key
