@@ -2,6 +2,14 @@
 import sqlalchemy
 
 
+class TableNotFoundException(Exception):
+    pass
+
+
+class ColumnNotFoundException(Exception):
+    pass
+
+
 class SqlColumn(object):
     def build_column(self, sql_table):
         raise NotImplementedError()
@@ -65,14 +73,21 @@ class SimpleQueryMeta(QueryMeta):
 
     def _build_query(self, metadata):
         self._check()
-        table = metadata.tables[self.table_name]
-        query = sqlalchemy.select()
-        if self.group_by:
-            for group_key in self.group_by:
-                query.append_group_by(table.c[group_key])
+        try:
+            table = metadata.tables[self.table_name]
+        except KeyError:
+            raise TableNotFoundException("Unable to query table, table not found: %s" % self.table_name)
 
-        for c in self.columns:
-            query.append_column(c.build_column(table))
+        try:
+            query = sqlalchemy.select()
+            if self.group_by:
+                for group_key in self.group_by:
+                    query.append_group_by(table.c[group_key])
+
+            for c in self.columns:
+                query.append_column(c.build_column(table))
+        except KeyError as e:
+            raise ColumnNotFoundException("Missing column in table (%s): %s" % (self.table_name, e))
 
         if self.filters:
             for filter in self.filters:
