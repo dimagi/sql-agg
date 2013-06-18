@@ -13,7 +13,7 @@ class TestSqlAgg(BaseTest, TestCase):
         cls.session = Session()
 
     def test_single_group(self):
-        data = self.get_user_data(None, None)
+        data = self._get_user_data(None, None)
 
         self.assertEqual(data['user1']['indicator_a'], 4)
         self.assertEqual(data['user1']['indicator_b'], 2)
@@ -24,7 +24,7 @@ class TestSqlAgg(BaseTest, TestCase):
         filters = ["date < :enddate"]
         filter_values = {"enddate": date(2013, 02, 01)}
 
-        data = self.get_user_data(filter_values, filters)
+        data = self._get_user_data(filter_values, filters)
         self.assertEqual(data['user1']['indicator_a'], 1)
         self.assertEqual(data['user1']['indicator_b'], 1)
         self.assertEqual(data['user2']['indicator_a'], 0)
@@ -34,13 +34,13 @@ class TestSqlAgg(BaseTest, TestCase):
         filters = ["date > :startdate", "date < :enddate"]
         filter_values = {"startdate": date(2013, 02, 20), "enddate": date(2013, 03, 05)}
 
-        data = self.get_user_data(filter_values, filters)
+        data = self._get_user_data(filter_values, filters)
         self.assertNotIn('user1', data)
         self.assertEqual(data['user2']['indicator_a'], 2)
         self.assertEqual(data['user2']['indicator_b'], 1)
 
     def test_multiple_groups(self):
-        data = self.get_region_data()
+        data = self._get_region_data()
 
         r1_a = ('region1', 'region1_a')
         self.assertEqual(data[r1_a]['indicator_a'], 1)
@@ -122,7 +122,28 @@ class TestSqlAgg(BaseTest, TestCase):
         self.assertEqual(data['region1']['indicator_a'], 5)
         self.assertEqual(data['region2']['indicator_a'], 2)
 
-    def get_user_data(self, filter_values, filters):
+    def test_missing_table(self):
+        vc = QueryContext("missing_table", group_by=["user"])
+        user = SimpleColumn("user")
+        i_a = SumColumn("indicator_a")
+        vc.append_column(user)
+        vc.append_column(i_a)
+
+        with self.assertRaises(TableNotFoundException):
+            data = vc.resolve(self.session.connection())
+
+    def test_missing_column(self):
+        vc = QueryContext("user_table", group_by=["user"])
+        user = SimpleColumn("user_missing")
+        i_a = SumColumn("indicator_a")
+        vc.append_column(user)
+        vc.append_column(i_a)
+
+        with self.assertRaises(ColumnNotFoundException):
+            data = vc.resolve(self.session.connection())
+
+
+    def _get_user_data(self, filter_values, filters):
         vc = QueryContext("user_table", filters=filters, group_by=["user"])
         user = SimpleColumn("user")
         i_a = SumColumn("indicator_a")
@@ -132,7 +153,7 @@ class TestSqlAgg(BaseTest, TestCase):
         vc.append_column(i_b)
         return vc.resolve(self.session.connection(), filter_values)
 
-    def get_region_data(self):
+    def _get_region_data(self):
         vc = QueryContext("region_table", filters=None, group_by=["region", "sub_region"])
         region = SimpleColumn("region")
         sub_region = SimpleColumn("sub_region")

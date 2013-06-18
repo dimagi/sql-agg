@@ -50,10 +50,20 @@ class ConditionalAggregation(BaseColumn):
 
 
 class SumWhen(ConditionalAggregation):
+    """
+    SumWhen("vehicle", whens={"unicycle": 1, "bicycle": 2, "car": 4}, else_=0, alias="num_wheels")
+    """
     aggregate_fn = func.sum
 
 
 class ConditionalColumn(SqlColumn):
+    """
+    ConditionalColumn("vehicle",
+                      whens={"unicycle": 1, "bicycle": 2, "car": 4},
+                      else_=0,
+                      aggregation_fn=func.sum,
+                      alias="num_wheels")
+    """
     def __init__(self, column_name, whens, else_, aggregate_fn, alias):
         self.aggregate_fn = aggregate_fn
         self.column_name = column_name
