@@ -63,6 +63,8 @@ class SimpleQueryMeta(QueryMeta):
             for c in self.columns:
                 if c.column_name in groups:
                     groups.remove(c.column_name)
+                elif c.alias in groups:
+                    groups.remove(c.alias)
 
             for g in groups:
                 self.columns.append(SimpleSqlColumn(g, aggregate_fn=None, alias=g))
@@ -81,8 +83,13 @@ class SimpleQueryMeta(QueryMeta):
         try:
             query = sqlalchemy.select()
             if self.group_by:
+                cols = [c.column_name for c in self.columns]
+                alias = [c.alias for c in self.columns]
                 for group_key in self.group_by:
-                    query.append_group_by(table.c[group_key])
+                    if group_key in cols:
+                        query.append_group_by(table.c[group_key])
+                    elif group_key in alias:
+                        query.append_group_by(group_key)
 
             for c in self.columns:
                 query.append_column(c.build_column(table))

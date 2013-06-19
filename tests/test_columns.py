@@ -1,8 +1,10 @@
+from sqlalchemy import func
 from unittest2 import TestCase
 from . import BaseTest, engine
 from sqlalchemy.orm import sessionmaker
 
 from sqlagg import *
+from sqlagg.columns import SimpleColumn, MonthColumn, DayColumn, YearColumn
 
 Session = sessionmaker()
 
@@ -91,6 +93,29 @@ class TestSqlAggViews(BaseTest, TestCase):
         # sum(case when indicator_a between 1 and 2 then 0 else 1)
         col = SumWhen(whens={'user_table.indicator_a between 1 and 2': 0}, else_=1, alias='a')
         self._test_view(col, 2)
+
+    def test_conditional_column_multi(self):
+        # sum(case user when 'user1' then indicator_a else 0)
+        col = SumWhen(whens={"user_table.user = 'user1'": 'indicator_a'}, else_=0, alias='a')
+        self._test_view(col, 4)
+
+    def test_month(self):
+        vc = QueryContext("user_table", group_by=['month'])
+        vc.append_column(MonthColumn('date', alias='month'))
+        result = vc.resolve(self.session.connection())
+        self.assertEquals(result, {1.0: {'month': 1.0}, 2.0: {'month': 2.0}, 3.0: {'month': 3.0}})
+
+    def test_day(self):
+        vc = QueryContext("user_table", group_by=['day'])
+        vc.append_column(DayColumn('date', alias='day'))
+        result = vc.resolve(self.session.connection())
+        self.assertEquals(result, {1.0: {'day': 1.0}})
+
+    def test_year(self):
+        vc = QueryContext("user_table", group_by=['year'])
+        vc.append_column(YearColumn('date', alias='year'))
+        result = vc.resolve(self.session.connection())
+        self.assertEquals(result, {2013.0: {'year': 2013.0}})
 
     def _test_view(self, view, expected):
         data = self._get_view_data(view)

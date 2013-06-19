@@ -7,6 +7,18 @@ class SimpleColumn(BaseColumn):
     pass
 
 
+class YearColumn(SimpleColumn):
+    aggregate_fn = lambda _, y: func.extract('YEAR', y)
+
+
+class MonthColumn(SimpleColumn):
+    aggregate_fn = lambda _, y: func.extract('MONTH', y)
+
+
+class DayColumn(SimpleColumn):
+    aggregate_fn = lambda _, y: func.extract('DAY', y)
+
+
 class SumColumn(BaseColumn):
     aggregate_fn = func.sum
 
@@ -77,7 +89,10 @@ class ConditionalColumn(SqlColumn):
         else:
             whens = {}
             for when, then in self.whens.items():
-                whens[text(when)] = then
+                if isinstance(then, basestring):
+                    whens[text(when)] = text(then)
+                else:
+                    whens[text(when)] = then
 
             expr = case(whens=whens, else_=self.else_)
 
