@@ -148,6 +148,23 @@ class QueryContext(object):
         return self._metadata
 
     def resolve(self, connection, filter_values=None):
+        """
+        Returns a dict containing the data of the following format:
+        * If group_by == [] or None
+            return a dict mapping column names to values: {'col_a': 1....}
+        * If len(group_by) == 1
+            return a dict mapping groupings to that group levels data
+            e.g. {
+                    'user1': {'user': 'user1', 'col_a': 1...},
+                    'user2': {...}
+                }
+        * If len(group_by) > 1
+            return a dict mapping tuple(groupsings) to that group levels data
+            e.g. {
+                    ('region1', 'subregion1'): {'region': 'region1', 'sub_region': 'subregion1', 'col_a': 1}
+                    ('region1', 'subregion2'): {...}
+                 }
+        """
         self.connection = connection
 
         data = {}

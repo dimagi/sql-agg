@@ -45,10 +45,12 @@ The resultant `data` variable will be a dictionary as follows:
 ```python
 {
     "user1": {
+        "user": "user1",
         "column_a": 3,
         "column_b": 2
     },
     "user2": {
+        "user": "user2"
         "column_a": 0,
         "column_b": 1
     }
@@ -71,18 +73,20 @@ vc = QueryContext("table_name"
 The resultant data would look as follows:
 ```python
 {
-    "region1": {
-        "sub_region1": {
-            "column_a": 1
-        },
-        "sub_region2": {
-            "column_a": 3
-        }
+    ("region1", "sub_region1"): {
+        "region": "region1",
+        "sub_region": "sub_region1",
+        "column_a": 1
     },
-    "region2": {
-        "sub_region3": {
-            "column_a": 2
-        }
+    ("region1", "sub_region2"): {
+        "region": "region1",
+        "sub_region": "sub_region2",
+        "column_a": 3
+    },
+    ("region2", "sub_region3"): {
+        "region": "region2",
+        "sub_region": "sub_region3",
+        "column_a": 2
     }
 }
 ```
