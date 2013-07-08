@@ -7,15 +7,15 @@ class SimpleColumn(BaseColumn):
     pass
 
 
-class YearColumn(SimpleColumn):
+class YearColumn(BaseColumn):
     aggregate_fn = lambda _, y: func.extract('YEAR', y)
 
 
-class MonthColumn(SimpleColumn):
+class MonthColumn(BaseColumn):
     aggregate_fn = lambda _, y: func.extract('MONTH', y)
 
 
-class DayColumn(SimpleColumn):
+class DayColumn(BaseColumn):
     aggregate_fn = lambda _, y: func.extract('DAY', y)
 
 
