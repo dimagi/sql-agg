@@ -193,6 +193,10 @@ class QueryContext(object):
 
 class SqlAggColumn(object):
     @property
+    def name(self):
+        raise NotImplementedError()
+
+    @property
     def column_key(self):
         raise NotImplementedError()
 
@@ -216,6 +220,10 @@ class BaseColumn(SqlAggColumn):
         self.group_by = group_by
 
         #TODO: allow 'having' e.g. count(x) having x > 4
+
+    @property
+    def name(self):
+        return self.alias or self.key
 
     @property
     def column_key(self):
