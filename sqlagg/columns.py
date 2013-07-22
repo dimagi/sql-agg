@@ -15,8 +15,24 @@ class MonthColumn(BaseColumn):
     aggregate_fn = lambda _, y: func.extract('MONTH', y)
 
 
+class WeekColumn(BaseColumn):
+    aggregate_fn = lambda _, y: func.extract('WEEK', y)
+
+
 class DayColumn(BaseColumn):
     aggregate_fn = lambda _, y: func.extract('DAY', y)
+
+
+class YearQuarterColumn(BaseColumn):
+    aggregate_fn = lambda _, y: func.extract('QUARTER', y)
+
+
+class DayOfWeekColumn(BaseColumn):
+    aggregate_fn = lambda _, y: func.extract('DOW', y)
+
+
+class DayOfYearColumn(BaseColumn):
+    aggregate_fn = lambda _, y: func.extract('DOY', y)
 
 
 class SumColumn(BaseColumn):
@@ -39,8 +55,8 @@ class MeanColumn(BaseColumn):
     aggregate_fn = func.avg
 
 
-class UniqueColumn(BaseColumn):
-    aggregate_fn = lambda view, column: func.count(distinct(column))
+class CountUniqueColumn(BaseColumn):
+    aggregate_fn = lambda _, column: func.count(distinct(column))
 
 
 class MedianColumn(CustomQueryColumn):
