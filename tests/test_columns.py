@@ -4,7 +4,7 @@ from . import BaseTest, engine
 from sqlalchemy.orm import sessionmaker
 
 from sqlagg import *
-from sqlagg.columns import SimpleColumn, MonthColumn, DayColumn, YearColumn
+from sqlagg.columns import SimpleColumn, MonthColumn, DayColumn, YearColumn, WeekColumn, CountUniqueColumn, DayOfWeekColumn, DayOfYearColumn, YearQuarterColumn
 
 Session = sessionmaker()
 
@@ -41,10 +41,10 @@ class TestSqlAggViews(BaseTest, TestCase):
         self._test_view(MeanColumn("indicator_a"), 1.5)
 
     def test_unique(self):
-        self._test_view(UniqueColumn("user"), 2)
+        self._test_view(CountUniqueColumn("user"), 2)
 
     def test_unique_2(self):
-        self._test_view(UniqueColumn("sub_region", table_name="region_table"), 3)
+        self._test_view(CountUniqueColumn("sub_region", table_name="region_table"), 3)
 
     def test_median(self):
         self._test_view(MedianColumn("indicator_a"), 1.5)
@@ -116,6 +116,30 @@ class TestSqlAggViews(BaseTest, TestCase):
         vc.append_column(YearColumn('date', alias='year'))
         result = vc.resolve(self.session.connection())
         self.assertEquals(result, {2013.0: {'year': 2013.0}})
+
+    def test_week(self):
+        vc = QueryContext("user_table", group_by=['week'])
+        vc.append_column(WeekColumn('date', alias='week'))
+        result = vc.resolve(self.session.connection())
+        self.assertEquals(result, {1.0: {u'week': 1.0}, 5.0: {u'week': 5.0}, 9.0: {u'week': 9.0}})
+
+    def test_day_of_week(self):
+        vc = QueryContext("user_table", group_by=['dow'])
+        vc.append_column(DayOfWeekColumn('date', alias='dow'))
+        result = vc.resolve(self.session.connection())
+        self.assertEquals(result, {2.0: {u'dow': 2.0}, 5.0: {u'dow': 5.0}})
+
+    def test_day_of_year(self):
+        vc = QueryContext("user_table", group_by=['doy'])
+        vc.append_column(DayOfYearColumn('date', alias='doy'))
+        result = vc.resolve(self.session.connection())
+        self.assertEquals(result, {1.0: {u'doy': 1.0}, 32.0: {u'doy': 32.0}, 60.0: {u'doy': 60.0}})
+
+    def test_quarter(self):
+        vc = QueryContext("user_table", group_by=['q'])
+        vc.append_column(YearQuarterColumn('date', alias='q'))
+        result = vc.resolve(self.session.connection())
+        self.assertEquals(result, {1.0: {u'q': 1.0}})
 
     def _test_view(self, view, expected):
         data = self._get_view_data(view)
