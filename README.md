@@ -133,7 +133,7 @@ num_wheels = SumWhen("vehicle", whens={"unicycle": 1, "bicycle": 2, "car": 4}, e
 
 *Complex*
 ```python
-num_children = SumWhen(whens={"users.age < 13", 1}, else_=0, alias="children")
+num_children = SumWhen(whens={"users.age < 13": 1}, else_=0, alias="children")
 ```
 
 ## Alias and Aggregate columns
