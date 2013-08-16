@@ -263,6 +263,10 @@ class AliasColumn(SqlAggColumn):
     def __init__(self, key):
         self.key = key
 
+    @property
+    def name(self):
+        return self.key
+
     def get_value(self, row):
         return row.get(self.key, None) if row else None
 
@@ -271,6 +275,10 @@ class AggregateColumn(SqlAggColumn):
     def __init__(self, aggregate_fn, *columns):
         self.aggregate_fn = aggregate_fn
         self.columns = columns
+
+    @property
+    def name(self):
+        return '_'.join([c.name for c in self.columns])
 
     def get_value(self, row):
         values = [v.get_value(row) for v in self.columns]
