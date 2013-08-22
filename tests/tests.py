@@ -4,6 +4,7 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from datetime import date
 from sqlagg import *
 from sqlagg.columns import *
+from sqlagg.filters import LT, GTE, GT, AND
 
 
 class TestSqlAgg(BaseTest, TestCase):
@@ -21,7 +22,7 @@ class TestSqlAgg(BaseTest, TestCase):
         self.assertEqual(data['user2']['indicator_b'], 2)
 
     def test_filters(self):
-        filters = ["date < :enddate"]
+        filters = [LT('date', 'enddate')]
         filter_values = {"enddate": date(2013, 02, 01)}
 
         data = self._get_user_data(filter_values, filters)
@@ -31,13 +32,16 @@ class TestSqlAgg(BaseTest, TestCase):
         self.assertEqual(data['user2']['indicator_b'], 1)
 
     def test_filters_multiple(self):
-        filters = ["date > :startdate", "date < :enddate"]
-        filter_values = {"startdate": date(2013, 02, 20), "enddate": date(2013, 03, 05)}
+        def test(filters):
+            filter_values = {"startdate": date(2013, 02, 20), "enddate": date(2013, 03, 05)}
 
-        data = self._get_user_data(filter_values, filters)
-        self.assertNotIn('user1', data)
-        self.assertEqual(data['user2']['indicator_a'], 2)
-        self.assertEqual(data['user2']['indicator_b'], 1)
+            data = self._get_user_data(filter_values, filters)
+            self.assertNotIn('user1', data)
+            self.assertEqual(data['user2']['indicator_a'], 2)
+            self.assertEqual(data['user2']['indicator_b'], 1)
+
+        test([GTE('date', 'startdate'), LT('date', 'enddate')])
+        test([AND([GTE('date', 'startdate'), LT('date', 'enddate')])])
 
     def test_multiple_groups(self):
         data = self._get_region_data()
@@ -55,12 +59,12 @@ class TestSqlAgg(BaseTest, TestCase):
         self.assertEqual(data[r2_a]['indicator_b'], 1)
 
     def test_different_filters(self):
-        filters = ["date < :enddate"]
+        filters = [LT('date', 'enddate')]
         filter_values = {"enddate": date(2013, 02, 01)}
         vc = QueryContext("user_table", filters=filters, group_by=["user"])
         user = SimpleColumn("user")
         i_a = SumColumn("indicator_a")
-        i_b = SumColumn("indicator_b", filters=["date > :enddate"])
+        i_b = SumColumn("indicator_b", filters=[GT('date', 'enddate')])
         vc.append_column(user)
         vc.append_column(i_a)
         vc.append_column(i_b)
@@ -72,7 +76,7 @@ class TestSqlAgg(BaseTest, TestCase):
         self.assertEqual(data['user2']['indicator_b'], 1)
 
     def test_alias(self):
-        filters = ["date < :enddate"]
+        filters = [LT('date', 'enddate')]
         filter_values = {"enddate": date(2013, 04, 01)}
         vc = QueryContext("user_table", filters=filters, group_by=["user"])
         user = SimpleColumn("user")
@@ -102,7 +106,7 @@ class TestSqlAgg(BaseTest, TestCase):
         self.assertAlmostEqual(float(data["indicator_a"]), float(0.25))
 
     def test_multiple_tables(self):
-        filters = ["date < :enddate"]
+        filters = [LT('date', 'enddate')]
         filter_values = {"enddate": date(2013, 04, 01)}
         vc = QueryContext("user_table", filters=filters, group_by=["user"])
         user = SimpleColumn("user")

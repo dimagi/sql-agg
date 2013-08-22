@@ -25,7 +25,7 @@ i_b = CountColumn("column_b")
 
 # initialise the query context and add the columns to it
 vc = QueryContext("table_name",
-    filters=["date > :startdate", "date < :enddate"],
+    filters=[GT('date', 'startdate'), LT('date', 'enddate')],
     group_by=["user"])
 vc.append_column(yuser)
 vc.append_column(i_a)
@@ -98,7 +98,7 @@ different filters per column or select data from different columns.
 ### Different filters
 ```python
 column_a = SumColumn("column_a")
-column_b = SumColumn("column_b", filters="date < '{enddate}'")
+column_b = SumColumn("column_b", filters=[LT('date', 'enddate')])
 ```
 
 In this case `column_a` will get the filters supplied to the `QueryContext` while `column_b` will be resolved with its own
@@ -147,5 +147,27 @@ aggregate = AggregateColumn(lambda x, y: x / y,
 ```
 TODO: custom queries
 
+# Filtering
+The `QueryContext` and most column classes accept a `filters` parameter which must be iterable.
+Each element of this iterable must be a subclass of `sqlagg.filter.SqlFilter`. The elements of this
+parameter are combined using the `AND` operator.
+
+i.e.
+`filters = [EQ('user', 'username'), EQ('role', 'admin')]`
+
+is equivalent to:
+
+```
+filters = [AND([
+    EQ('user', 'username'), EQ('role', 'admin')
+])]
+```
 
 
+Any filter expression can be expressed using a RawFilter:
+
+`RawFilter('"user" = :username AND "date" between :start and :end')
+
+In this case the same filter could be expressed as follows:
+
+`AND([EQ('user', 'username'), BETWEEN('date', 'start', 'end'])`

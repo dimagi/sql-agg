@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import sqlalchemy
+from sqlagg.filters import SqlFilter
 
 
 class TableNotFoundException(Exception):
@@ -98,7 +99,7 @@ class SimpleQueryMeta(QueryMeta):
 
         if self.filters:
             for filter in self.filters:
-                query.append_whereclause(filter)
+                query.append_whereclause(filter.build_expression())
 
         if not query.froms:
             query = query.select_from(table)
@@ -116,6 +117,9 @@ class QueryContext(object):
         self.filters = filters
         self.group_by = group_by
         self.query_meta = {}
+
+        if self.filters:
+            assert all(isinstance(f, SqlFilter) for f in self.filters)
 
     def append_column(self, column):
         if isinstance(column, AliasColumn):
@@ -218,6 +222,9 @@ class BaseColumn(SqlAggColumn):
         self.table_name = table_name
         self.filters = filters
         self.group_by = group_by
+
+        if self.filters:
+            assert all(isinstance(f, SqlFilter) for f in self.filters)
 
         #TODO: allow 'having' e.g. count(x) having x > 4
 
