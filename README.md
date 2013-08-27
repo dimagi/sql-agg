@@ -166,7 +166,7 @@ filters = [AND([
 
 Any filter expression can be expressed using a RawFilter:
 
-`RawFilter('"user" = :username AND "date" between :start and :end')
+`RawFilter('"user" = :username AND "date" between :start and :end')`
 
 In this case the same filter could be expressed as follows:
 
