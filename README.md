@@ -55,6 +55,7 @@ The resultant `data` variable will be a dictionary as follows:
         "column_b": 1
     }
 }
+```
 
 ## Multi-level grouping
 Multi-level grouping can be done by adding multiple SimpleColumn's to the QueryContext as well as multiple column names in
