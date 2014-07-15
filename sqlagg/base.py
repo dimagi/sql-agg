@@ -147,7 +147,12 @@ class QueryContext(object):
         if not hasattr(self, '_metadata'):
             self._metadata = sqlalchemy.MetaData()
             self._metadata.bind = self.connection
-            self._metadata.reflect()
+
+            tables = [qm.table_name for qm in self.query_meta.values()]
+            def table_filter(table_name, metadata):
+                return table_name in tables
+
+            self._metadata.reflect(only=table_filter)
 
         return self._metadata
 
