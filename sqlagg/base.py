@@ -188,7 +188,10 @@ class QueryContext(object):
                 elif len(qm.group_by) > 1:
                     row_key = tuple([r[group] for group in qm.group_by])
 
-                if row_key is not None:
+                if qm.group_by:
+                    if row_key is None:
+                        # null values coming out of the database wreak havoc elsewhere in the code
+                        row_key = ''
                     row = data.setdefault(row_key, {})
                     row.update(kvp for kvp in r.items())
                 else:
