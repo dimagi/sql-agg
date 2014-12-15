@@ -27,7 +27,7 @@ i_b = CountColumn("column_b")
 vc = QueryContext("table_name",
     filters=[GT('date', 'startdate'), LT('date', 'enddate')],
     group_by=["user"])
-vc.append_column(yuser)
+vc.append_column(user)
 vc.append_column(i_a)
 vc.append_column(i_b)
 
