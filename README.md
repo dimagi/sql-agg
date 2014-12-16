@@ -110,7 +110,7 @@ It is possible to select data from different tables by providing columns with di
 
 ```python
 column_a = SumColumn("column_a")
-column_b = SumColumn("column_b", table_name="table_b", group_by=["user"]
+column_b = SumColumn("column_b", table_name="table_b", group_by=["user"])
 ```
 
 Here `column_a` will be selected from the table configured in the QueryContext while `column_b` will be selected from
