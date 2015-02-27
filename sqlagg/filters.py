@@ -15,11 +15,10 @@ class RawFilter(SqlFilter):
 
 
 class BasicFilter(SqlFilter):
-    operator = None
-
-    def __init__(self, column_name, parameter):
+    def __init__(self, column_name, parameter, operator=None):
         self.column_name = column_name
         self.parameter = parameter
+        self.operator = operator
 
     def build_expression(self):
         if not self.operator:
