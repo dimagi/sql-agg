@@ -1,5 +1,15 @@
+import collections
+
+from sqlalchemy import bindparam, text
+from sqlalchemy.sql import operators, and_, or_, not_
+
+
+def get_column(table, column_name):
+    return getattr(table.c, column_name)
+
+
 class SqlFilter(object):
-    def build_expression(self):
+    def build_expression(self, table):
         raise NotImplementedError()
 
     def __str__(self):
@@ -10,8 +20,8 @@ class RawFilter(SqlFilter):
     def __init__(self, expression):
         self.expression = expression
 
-    def build_expression(self):
-        return self.expression
+    def build_expression(self, table):
+        return text(self.expression)
 
 
 class BasicFilter(SqlFilter):
@@ -23,11 +33,11 @@ class BasicFilter(SqlFilter):
         if operator:
             self.operator = operator
 
-    def build_expression(self):
+    def build_expression(self, table):
         if not self.operator:
             raise 'Operator missing'
 
-        return '"%s" %s :%s' % (self.column_name, self.operator, self.parameter)
+        return self.operator(get_column(table, self.column_name), bindparam(self.parameter))
 
 
 class BetweenFilter(SqlFilter):
@@ -36,63 +46,69 @@ class BetweenFilter(SqlFilter):
         self.lower_param = lower_param
         self.upper_param = upper_param
 
-    def build_expression(self):
-        return '"%s" between :%s and :%s' % (self.column_name, self.lower_param, self.upper_param)
+    def build_expression(self, table):
+        return get_column(table, self.column_name).between(
+            bindparam(self.lower_param), bindparam(self.upper_param)
+        )
 
 
 class GTFilter(BasicFilter):
-    operator = '>'
+    operator = operators.gt
 
 
 class GTEFilter(BasicFilter):
-    operator = '>='
+    operator = operators.ge
 
 
 class LTFilter(BasicFilter):
-    operator = '<'
+    operator = operators.lt
 
 
 class LTEFilter(BasicFilter):
-    operator = '<='
+    operator = operators.le
 
 
 class EQFilter(BasicFilter):
-    operator = '='
+    operator = operators.eq
 
 
 class NOTEQFilter(BasicFilter):
-    operator = '!='
+    operator = operators.ne
 
 
 class INFilter(BasicFilter):
     """
     This filter requires that the parameter value be a tuple.
     """
-    operator = 'in'
-
+    def build_expression(self, table):
+        assert isinstance(self.parameter, collections.Iterable)
+        return operators.in_op(
+            get_column(table, self.column_name),
+            tuple(bindparam(param) for param in self.parameter)
+        )
 
 class ISNULLFilter(SqlFilter):
     def __init__(self, column_name):
         self.column_name = column_name
 
-    def build_expression(self):
-        return '"%s" IS NULL' % self.column_name
+    def build_expression(self, table):
+        return get_column(table, self.column_name).is_(None)
 
 
 class NOTNULLFilter(SqlFilter):
     def __init__(self, column_name):
         self.column_name = column_name
 
-    def build_expression(self):
-        return '"%s" IS NOT NULL' % self.column_name
+    def build_expression(self, table):
+        return get_column(table, self.column_name).isnot(None)
 
 
 class NOTFilter(SqlFilter):
     def __init__(self, filter):
         self.filter = filter
 
-    def build_expression(self):
-        return 'NOT %s' % self.filter.build_expression()
+    def build_expression(self, table):
+        return not_(self.filter.build_expression(table))
 
 
 class ANDFilter(SqlFilter):
@@ -103,9 +119,8 @@ class ANDFilter(SqlFilter):
         self.filters = filters
         assert len(self.filters) > 1
 
-    def build_expression(self):
-        expressions = [f.build_expression() for f in self.filters]
-        return '(%s)' % ' AND '.join(expressions)
+    def build_expression(self, table):
+        return and_(*[f.build_expression(table) for f in self.filters])
 
 
 class ORFilter(SqlFilter):
@@ -116,9 +131,8 @@ class ORFilter(SqlFilter):
         self.filters = filters
         assert len(self.filters) > 1
 
-    def build_expression(self):
-        expressions = [f.build_expression() for f in self.filters]
-        return '(%s)' % ' OR '.join(expressions)
+    def build_expression(self, table):
+        return or_(*[f.build_expression(table) for f in self.filters])
 
 
 RAW = RawFilter

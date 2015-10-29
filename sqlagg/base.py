@@ -101,7 +101,7 @@ class SimpleQueryMeta(QueryMeta):
 
         if self.filters:
             for filter in self.filters:
-                query.append_whereclause(filter.build_expression())
+                query.append_whereclause(filter.build_expression(table))
 
         if not query.froms:
             query = query.select_from(table)
