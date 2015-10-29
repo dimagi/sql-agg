@@ -25,7 +25,6 @@ class TestSqlAggViews(TestCase):
         a = RAW('fancy stuff')
         self.assertEqual(str(a.build_expression(self.mock_table)), 'fancy stuff')
 
-    # todo - check how this changes the functionality
     def test_between(self):
         a = BETWEEN(self.column_name, 'start', 'end')
         self.assertEqual(
