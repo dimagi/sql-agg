@@ -18,8 +18,7 @@ class TestSqlAggViews(TestCase):
         class MockColumns(object):
             pass
         cls.mock_table = MockTable()
-        setattr(cls.mock_table, 'c', MockColumns())
-        setattr(cls.mock_table.c, cls.column_name, Column(cls.column_name, type_=String))
+        setattr(cls.mock_table, 'c', [Column(cls.column_name, type_=String)])
 
     def test_raw(self):
         a = RAW('fancy stuff')
