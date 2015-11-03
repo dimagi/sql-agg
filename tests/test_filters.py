@@ -13,10 +13,10 @@ class TestSqlAggViews(TestCase):
         cls.column_dict = {
             'column_name': cls.column_name,
         }
+
         class MockTable(object):
             pass
-        class MockColumns(object):
-            pass
+
         cls.mock_table = MockTable()
         setattr(cls.mock_table, 'c', [Column(cls.column_name, type_=String)])
 
