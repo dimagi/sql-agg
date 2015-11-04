@@ -92,6 +92,26 @@ class TestSqlAgg(BaseTest, TestCase):
         self.assertEqual(data['user2']['sum_a'], 2)
         self.assertEqual(data['user2']['count_a'], 2)
 
+    def test_group_by_missing_column(self):
+        vc = QueryContext("user_table", group_by=["user"])
+        i_a = SumColumn("indicator_a")
+        vc.append_column(i_a)
+        data = vc.resolve(self.session.connection())
+
+        self.assertEqual(data['user1']['indicator_a'], 4)
+        self.assertEqual(data['user2']['indicator_a'], 2)
+
+    def test_group_by_aliased_column(self):
+        vc = QueryContext("user_table", group_by=["user"])
+        user = SimpleColumn("user", alias="aliased_column")
+        i_a = SumColumn("indicator_a")
+        vc.append_column(user)
+        vc.append_column(i_a)
+        data = vc.resolve(self.session.connection())
+
+        self.assertEqual(data['user1']['indicator_a'], 4)
+        self.assertEqual(data['user2']['indicator_a'], 2)
+
     def test_custom_view(self):
         from sqlalchemy import func
         vc = QueryContext("user_table", filters=None, group_by=[])

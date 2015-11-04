@@ -62,7 +62,7 @@ class SimpleQueryMeta(QueryMeta):
         if self.group_by:
             groups = list(self.group_by)
             for c in self.columns:
-                if c.column_name in groups:
+                if c.column_name in groups and not c.alias:
                     groups.remove(c.column_name)
                 elif c.alias in groups:
                     groups.remove(c.alias)
