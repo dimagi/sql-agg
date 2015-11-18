@@ -13,7 +13,7 @@ setup(
     packages=['sqlagg', 'sqlagg.queries'],
     license='MIT',
     install_requires=[
-        'SQLAlchemy>=0.8.0',
+        'SQLAlchemy>=1.0.9',
     ],
     tests_require=[
         'unittest2',
