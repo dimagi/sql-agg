@@ -54,6 +54,11 @@ class MinColumn(BaseColumn):
 class MeanColumn(BaseColumn):
     aggregate_fn = func.avg
 
+    def get_value(self, row):
+        value = super(MeanColumn, self).get_value(row)
+        if value is not None:
+            return float(value)
+
 
 class CountUniqueColumn(BaseColumn):
     aggregate_fn = lambda _, column: func.count(distinct(column))
