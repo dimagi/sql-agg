@@ -1,5 +1,10 @@
 class SqlAggException(Exception):
     pass
 
-class ColumnWithNameNotFoundException(SqlAggException):
+
+class TableNotFoundException(SqlAggException):
+    pass
+
+
+class ColumnNotFoundException(SqlAggException):
     pass
