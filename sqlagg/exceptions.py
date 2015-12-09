@@ -2,11 +2,11 @@ class SqlAggException(Exception):
     pass
 
 
-class TableNotFoundException(Exception):
+class TableNotFoundException(SqlAggException):
     pass
 
 
-class ColumnNotFoundException(Exception):
+class ColumnNotFoundException(SqlAggException):
     pass
 
 
