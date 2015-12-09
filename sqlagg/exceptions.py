@@ -8,7 +8,3 @@ class TableNotFoundException(SqlAggException):
 
 class ColumnNotFoundException(SqlAggException):
     pass
-
-
-class ColumnWithNameNotFoundException(SqlAggException):
-    pass

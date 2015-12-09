@@ -3,14 +3,14 @@ import collections
 from sqlalchemy import bindparam, text
 from sqlalchemy.sql import operators, and_, or_, not_
 
-from sqlagg.exceptions import ColumnWithNameNotFoundException
+from sqlagg.exceptions import ColumnNotFoundException
 
 
 def get_column(table, column_name):
     for column in table.c:
         if column.name == column_name:
             return column
-    raise ColumnWithNameNotFoundException('column with name "%s" not found' % column_name)
+    raise ColumnNotFoundException('column with name "%s" not found' % column_name)
 
 
 class SqlFilter(object):
