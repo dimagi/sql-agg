@@ -1,14 +1,8 @@
 # -*- coding: utf-8 -*-
 import sqlalchemy
+
+from sqlagg.exceptions import TableNotFoundException, ColumnNotFoundException
 from sqlagg.filters import SqlFilter
-
-
-class TableNotFoundException(Exception):
-    pass
-
-
-class ColumnNotFoundException(Exception):
-    pass
 
 
 class SqlColumn(object):
