@@ -145,6 +145,7 @@ class QueryContext(object):
             self._metadata.bind = self.connection
 
             tables = [qm.table_name for qm in self.query_meta.values()]
+
             def table_filter(table_name, metadata):
                 return table_name in tables
 
