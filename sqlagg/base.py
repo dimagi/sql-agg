@@ -213,7 +213,7 @@ class SqlAggColumn(object):
 
 
 class QueryColumn(SqlAggColumn):
-    def get_query_meta(self):
+    def get_query_meta(self, table_name, filters, group_by):
         raise NotImplementedError()
 
 
