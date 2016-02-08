@@ -108,10 +108,10 @@ class SimpleQueryMeta(QueryMeta):
 
 
 class QueryContext(object):
-    def __init__(self, table, filters=[], group_by=[]):
+    def __init__(self, table, filters=None, group_by=None):
         self.table_name = table
-        self.filters = filters
-        self.group_by = group_by
+        self.filters = filters or []
+        self.group_by = group_by or []
         self.query_meta = {}
 
         if self.filters:
