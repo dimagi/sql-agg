@@ -48,8 +48,10 @@ class SimpleQueryMeta(QueryMeta):
     """
     Metadata about a query including the table being queried, list of columns, filters and group by columns.
     """
-    def __init__(self, table_name, filters, group_by, order_by):
+    def __init__(self, table_name, filters, group_by, order_by, start=None, limit=None):
         super(SimpleQueryMeta, self).__init__(table_name, filters, group_by, order_by)
+        self.start = start
+        self.limit = limit
         self.columns = []
 
     def append_column(self, column):
@@ -108,6 +110,11 @@ class SimpleQueryMeta(QueryMeta):
                 order = order_by_column.build_expression()
                 query = query.order_by(order)
 
+        if self.start:
+            query = query.offset(self.start)
+        if self.limit:
+            query = query.limit(self.limit)
+
         return query
 
     def __repr__(self):
@@ -116,11 +123,13 @@ class SimpleQueryMeta(QueryMeta):
 
 
 class QueryContext(object):
-    def __init__(self, table, filters=None, group_by=None, order_by=None):
+    def __init__(self, table, filters=None, group_by=None, order_by=None, start=None, limit=None):
         self.table_name = table
         self.filters = filters or []
         self.group_by = group_by or []
         self.order_by = order_by or []
+        self.start = start
+        self.limit = limit
         self.query_meta = {}
 
         if self.filters:
@@ -146,7 +155,10 @@ class QueryContext(object):
             filters = column.filters or self.filters
             group_by = column.group_by or self.group_by
             order_by = column.order_by or self.order_by
-            return SimpleQueryMeta(table_name, filters, group_by, order_by)
+            return SimpleQueryMeta(
+                table_name, filters, group_by, order_by,
+                start=self.start, limit=self.limit
+            )
 
     @property
     def metadata(self):
