@@ -108,10 +108,10 @@ class SimpleQueryMeta(QueryMeta):
 
 
 class QueryContext(object):
-    def __init__(self, table, filters=[], group_by=[]):
+    def __init__(self, table, filters=None, group_by=None):
         self.table_name = table
-        self.filters = filters
-        self.group_by = group_by
+        self.filters = filters or []
+        self.group_by = group_by or []
         self.query_meta = {}
 
         if self.filters:
@@ -145,6 +145,7 @@ class QueryContext(object):
             self._metadata.bind = self.connection
 
             tables = [qm.table_name for qm in self.query_meta.values()]
+
             def table_filter(table_name, metadata):
                 return table_name in tables
 
@@ -213,7 +214,7 @@ class SqlAggColumn(object):
 
 
 class QueryColumn(SqlAggColumn):
-    def get_query_meta(self):
+    def get_query_meta(self, table_name, filters, group_by):
         raise NotImplementedError()
 
 
