@@ -1,10 +1,9 @@
-from sqlalchemy import func
 from unittest2 import TestCase
 from . import BaseTest, engine
 from sqlalchemy.orm import sessionmaker
 
 from sqlagg import *
-from sqlagg.columns import SimpleColumn, MonthColumn, DayColumn, YearColumn, WeekColumn, CountUniqueColumn, DayOfWeekColumn, DayOfYearColumn, YearQuarterColumn
+from sqlagg.columns import MonthColumn, DayColumn, YearColumn, WeekColumn, CountUniqueColumn, DayOfWeekColumn, DayOfYearColumn, YearQuarterColumn
 
 Session = sessionmaker()
 
