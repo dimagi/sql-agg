@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from collections import OrderedDict
+
 import sqlalchemy
 
 from sqlagg.exceptions import TableNotFoundException, ColumnNotFoundException
@@ -181,7 +183,7 @@ class QueryContext(object):
         """
         self.connection = connection
 
-        data = {}
+        data = OrderedDict()
         for qm in self.query_meta.values():
             result = qm.execute(self.metadata, self.connection, filter_values or {})
 
