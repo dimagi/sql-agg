@@ -4,7 +4,7 @@ from .base import BaseColumn, CustomQueryColumn, SqlColumn
 
 
 class SimpleColumn(BaseColumn):
-    pass
+    pass 
 
 
 class YearColumn(BaseColumn):
