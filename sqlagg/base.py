@@ -110,9 +110,9 @@ class SimpleQueryMeta(QueryMeta):
                 order = order_by_column.build_expression()
                 query = query.order_by(order)
 
-        if self.start:
+        if self.start is not None:
             query = query.offset(self.start)
-        if self.limit:
+        if self.limit is not None:
             query = query.limit(self.limit)
 
         return query
