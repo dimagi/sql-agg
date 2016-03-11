@@ -73,6 +73,12 @@ class SimpleQueryMeta(QueryMeta):
         query = self._build_query(metadata)
         return connection.execute(query, **filter_values).fetchall()
 
+    def count(self, metadata, connection, filter_values):
+        assert self.start is None
+        assert self.limit is None
+        query = self._build_query(metadata).alias('subquery').count()
+        return connection.execute(query, **filter_values).fetchall()[0][0]
+
     def _build_query(self, metadata):
         self._check()
         try:
@@ -174,6 +180,15 @@ class QueryContext(object):
             self._metadata.reflect(only=table_filter)
 
         return self._metadata
+
+    def count(self, connection, filter_values=None):
+        self.connection = connection
+        query_meta_values = self.query_meta.values()
+        if query_meta_values:
+            return query_meta_values[0].count(
+                self.metadata, connection, filter_values
+            )
+        return 0
 
     def resolve(self, connection, filter_values=None):
         """
