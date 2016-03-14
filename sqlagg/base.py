@@ -79,6 +79,23 @@ class SimpleQueryMeta(QueryMeta):
         query = self._build_query(metadata).alias('subquery').count()
         return connection.execute(query, **filter_values).fetchall()[0][0]
 
+    def totals(self, metadata, connection, filter_values, total_columns):
+        assert self.start is None
+        assert self.limit is None
+
+        def _generate_total_column(column_name, selectable):
+            from sqlagg import SumColumn
+            return SumColumn(column_name).sql_column.build_column(selectable)
+
+        subquery = self._build_query(metadata).alias()
+        query = sqlalchemy.select().select_from(subquery)
+        for total_column in total_columns:
+            query.append_column(_generate_total_column(total_column, subquery))
+        return dict(zip(
+            total_columns,
+            connection.execute(query, **filter_values).fetchall()[0]
+        ))
+
     def _build_query(self, metadata):
         self._check()
         try:
@@ -189,6 +206,15 @@ class QueryContext(object):
                 self.metadata, connection, filter_values
             )
         return 0
+
+    def totals(self, connection, total_columns, filter_values=None):
+        self.connection = connection
+        query_meta_values = self.query_meta.values()
+        if query_meta_values:
+            return query_meta_values[0].totals(
+                self.metadata, connection, filter_values or {}, total_columns
+            )
+        return {column: None for column in total_columns}
 
     def resolve(self, connection, filter_values=None):
         """
