@@ -186,7 +186,7 @@ class QueryContext(object):
         query_meta_values = self.query_meta.values()
         if query_meta_values:
             return query_meta_values[0].count(
-                self.metadata, connection, filter_values
+                self.metadata, connection, filter_values or {}
             )
         return 0
 
