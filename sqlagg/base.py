@@ -21,8 +21,8 @@ class SimpleSqlColumn(SqlColumn):
         self.alias = alias or column_name
         self.aggregate_fn = aggregate_fn
 
-    def build_column(self, sql_table):
-        table_column = sql_table.c[self.column_name]
+    def build_column(self, selectable):
+        table_column = selectable.c[self.column_name]
         sql_col = self.aggregate_fn(table_column) if self.aggregate_fn else table_column
         return sql_col.label(self.alias)
 
