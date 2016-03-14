@@ -70,9 +70,9 @@ class MedianColumn(CustomQueryColumn):
 
 
 class ConditionalAggregation(BaseColumn):
-    def __init__(self, key=None, whens={}, else_=None, *args, **kwargs):
+    def __init__(self, key=None, whens=None, else_=None, *args, **kwargs):
         super(ConditionalAggregation, self).__init__(key, *args, **kwargs)
-        self.whens = whens
+        self.whens = whens or {}
         self.else_ = else_
 
         assert self.key or self.alias, "Column must have either a key or an alias"
