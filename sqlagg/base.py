@@ -76,7 +76,7 @@ class SimpleQueryMeta(QueryMeta):
     def count(self, metadata, connection, filter_values):
         assert self.start is None
         assert self.limit is None
-        query = self._build_query(metadata).alias('subquery').count()
+        query = self._build_query(metadata).alias().count()
         return connection.execute(query, **filter_values).fetchall()[0][0]
 
     def _build_query(self, metadata):
