@@ -4,7 +4,7 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from datetime import date
 from sqlagg import *
 from sqlagg.columns import *
-from sqlagg.filters import LT, GTE, GT, AND
+from sqlagg.filters import LT, GTE, GT, AND, EQ
 
 
 class TestSqlAgg(BaseTest, TestCase):
@@ -154,7 +154,7 @@ class TestSqlAgg(BaseTest, TestCase):
         vc.append_column(i_a)
 
         with self.assertRaises(TableNotFoundException):
-            data = vc.resolve(self.session.connection())
+            vc.resolve(self.session.connection())
 
     def test_missing_column(self):
         vc = QueryContext("user_table", group_by=["user"])
@@ -164,7 +164,67 @@ class TestSqlAgg(BaseTest, TestCase):
         vc.append_column(i_a)
 
         with self.assertRaises(ColumnNotFoundException):
-            data = vc.resolve(self.session.connection())
+            vc.resolve(self.session.connection())
+
+    def test_totals_no_filter(self):
+        vc = QueryContext(
+            "user_table",
+            group_by=["user"],
+        )
+
+        for column_name in [
+            'indicator_a',
+            'indicator_b',
+            'indicator_c',
+        ]:
+            vc.append_column(SumColumn(column_name))
+
+        self.assertEqual(
+            vc.totals(
+                self.session.connection(),
+                [
+                    'indicator_a',
+                    'indicator_b',
+                    'indicator_c',
+                ],
+            ),
+            {
+                'indicator_a': 6,
+                'indicator_b': 5,
+                'indicator_c': 3,
+            },
+        )
+
+    def test_totals_with_filter(self):
+        vc = QueryContext(
+            "user_table",
+            filters=[EQ('user', 'username')],
+            group_by=["user"],
+        )
+
+        for column_name in [
+            'indicator_a',
+            'indicator_b',
+            'indicator_c',
+        ]:
+            vc.append_column(SumColumn(column_name))
+
+        self.assertEqual(
+            vc.totals(
+                self.session.connection(),
+                [
+                    'indicator_a',
+                    'indicator_b',
+                    'indicator_c',
+                ],
+                {'username': 'user1'},
+            ),
+            {
+                'indicator_a': 4,
+                'indicator_b': 1,
+                'indicator_c': 1,
+            },
+        )
 
 
     def _get_user_data(self, filter_values, filters):
