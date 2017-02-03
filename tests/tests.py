@@ -24,7 +24,7 @@ class TestSqlAgg(BaseTest, TestCase):
 
     def test_filters(self):
         filters = [LT('date', 'enddate')]
-        filter_values = {"enddate": date(2013, 02, 01)}
+        filter_values = {"enddate": date(2013, 2, 1)}
 
         data = self._get_user_data(filter_values, filters)
         self.assertEqual(data['user1']['indicator_a'], 1)
@@ -34,7 +34,7 @@ class TestSqlAgg(BaseTest, TestCase):
 
     def test_filters_multiple(self):
         def test(filters):
-            filter_values = {"startdate": date(2013, 02, 20), "enddate": date(2013, 03, 05)}
+            filter_values = {"startdate": date(2013, 2, 20), "enddate": date(2013, 3, 5)}
 
             data = self._get_user_data(filter_values, filters)
             self.assertNotIn('user1', data)
@@ -61,7 +61,7 @@ class TestSqlAgg(BaseTest, TestCase):
 
     def test_different_filters(self):
         filters = [LT('date', 'enddate')]
-        filter_values = {"enddate": date(2013, 02, 01)}
+        filter_values = {"enddate": date(2013, 2, 1)}
         vc = QueryContext("user_table", filters=filters, group_by=["user"])
         user = SimpleColumn("user")
         i_a = SumColumn("indicator_a")
@@ -78,7 +78,7 @@ class TestSqlAgg(BaseTest, TestCase):
 
     def test_alias(self):
         filters = [LT('date', 'enddate')]
-        filter_values = {"enddate": date(2013, 04, 01)}
+        filter_values = {"enddate": date(2013, 4, 1)}
         vc = QueryContext("user_table", filters=filters, group_by=["user"])
         user = SimpleColumn("user")
         i_sum_a = SumColumn("indicator_a", alias="sum_a")
@@ -128,7 +128,7 @@ class TestSqlAgg(BaseTest, TestCase):
 
     def test_multiple_tables(self):
         filters = [LT('date', 'enddate')]
-        filter_values = {"enddate": date(2013, 04, 01)}
+        filter_values = {"enddate": date(2013, 4, 1)}
         vc = QueryContext("user_table", filters=filters, group_by=["user"])
         user = SimpleColumn("user")
         i_a = SumColumn("indicator_a")
