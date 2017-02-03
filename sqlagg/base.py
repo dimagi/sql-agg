@@ -6,6 +6,7 @@ import sqlalchemy
 
 from sqlagg.exceptions import TableNotFoundException, ColumnNotFoundException
 from sqlagg.filters import SqlFilter
+from six.moves import zip
 
 
 class SqlColumn(object):
@@ -92,10 +93,10 @@ class SimpleQueryMeta(QueryMeta):
         query = sqlalchemy.select().select_from(subquery)
         for total_column in total_columns:
             query.append_column(_generate_total_column(total_column, subquery))
-        return dict(zip(
+        return dict(list(zip(
             total_columns,
             connection.execute(query, **filter_values).fetchall()[0]
-        ))
+        )))
 
     def _build_query(self, metadata):
         self._check()
