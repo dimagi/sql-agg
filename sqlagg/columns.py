@@ -1,5 +1,6 @@
+from __future__ import absolute_import
 from sqlalchemy import func, distinct, case, text
-from queries import MedianQueryMeta
+from .queries import MedianQueryMeta
 from .base import BaseColumn, CustomQueryColumn, SqlColumn
 
 

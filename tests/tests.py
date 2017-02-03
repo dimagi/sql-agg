@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from unittest2 import TestCase
 from . import BaseTest
 from sqlalchemy.orm import scoped_session, sessionmaker
