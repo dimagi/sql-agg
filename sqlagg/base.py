@@ -194,7 +194,7 @@ class QueryContext(object):
             def table_filter(table_name, metadata):
                 return table_name in tables
 
-            self._metadata.reflect(only=table_filter)
+            self._metadata.reflect(views=True, only=table_filter)
 
         return self._metadata
 
