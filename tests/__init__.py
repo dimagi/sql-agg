@@ -1,5 +1,5 @@
 from fixture import DataTestCase, SQLAlchemyFixture
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 
 from models import metadata, UserTable, RegionTable
 from fixtures import RegionData, UserData
@@ -10,6 +10,8 @@ from fixtures import RegionData, UserData
 engine = create_engine('postgresql://postgres:@localhost/sqlagg_test')
 metadata.bind = engine
 metadata.create_all()
+
+engine.execute(text('CREATE OR REPLACE VIEW "user_view" as SELECT * from user_table'))
 
 
 class BaseTest(DataTestCase):

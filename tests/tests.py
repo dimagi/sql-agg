@@ -226,6 +226,13 @@ class TestSqlAgg(BaseTest, TestCase):
             },
         )
 
+    def test_user_view_data(self):
+        data = self._get_user_view_data(None, None)
+
+        self.assertEqual(data['user1']['indicator_a'], 4)
+        self.assertEqual(data['user1']['indicator_b'], 2)
+        self.assertEqual(data['user2']['indicator_a'], 2)
+        self.assertEqual(data['user2']['indicator_b'], 2)
 
     def _get_user_data(self, filter_values, filters):
         vc = QueryContext("user_table", filters=filters, group_by=["user"])
@@ -248,3 +255,13 @@ class TestSqlAgg(BaseTest, TestCase):
         vc.append_column(i_a)
         vc.append_column(i_b)
         return vc.resolve(self.session.connection(), None)
+
+    def _get_user_view_data(self, filter_values, filters):
+        vc = QueryContext("user_view", filters=filters, group_by=["user"])
+        user = SimpleColumn("user")
+        i_a = SumColumn("indicator_a")
+        i_b = CountColumn("indicator_b")
+        vc.append_column(user)
+        vc.append_column(i_a)
+        vc.append_column(i_b)
+        return vc.resolve(self.session.connection(), filter_values)
