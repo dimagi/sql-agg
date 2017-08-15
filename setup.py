@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 try:
     from setuptools import setup
 except ImportError:
@@ -16,7 +17,7 @@ setup(
         'SQLAlchemy>=1.0.9',
     ],
     tests_require=[
-        'unittest2==0.5.1',
+        'unittest2==1.1.0',
         'nose',
         'SQLAlchemy-Fixtures>=0.1.5',
         'fixture>=1.4',

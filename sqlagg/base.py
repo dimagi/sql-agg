@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 from collections import OrderedDict
 
 import sqlalchemy
 
 from sqlagg.exceptions import TableNotFoundException, ColumnNotFoundException
 from sqlagg.filters import SqlFilter
+from six.moves import zip
 
 
 class SqlColumn(object):
@@ -91,10 +93,10 @@ class SimpleQueryMeta(QueryMeta):
         query = sqlalchemy.select().select_from(subquery)
         for total_column in total_columns:
             query.append_column(_generate_total_column(total_column, subquery))
-        return dict(zip(
+        return dict(list(zip(
             total_columns,
             connection.execute(query, **filter_values).fetchall()[0]
-        ))
+        )))
 
     def _build_query(self, metadata):
         self._check()
@@ -200,7 +202,7 @@ class QueryContext(object):
 
     def count(self, connection, filter_values=None):
         self.connection = connection
-        query_meta_values = self.query_meta.values()
+        query_meta_values = list(self.query_meta.values())
         if query_meta_values:
             return query_meta_values[0].count(
                 self.metadata, connection, filter_values or {}
@@ -209,7 +211,7 @@ class QueryContext(object):
 
     def totals(self, connection, total_columns, filter_values=None):
         self.connection = connection
-        query_meta_values = self.query_meta.values()
+        query_meta_values = list(self.query_meta.values())
         if query_meta_values:
             return query_meta_values[0].totals(
                 self.metadata, connection, filter_values or {}, total_columns
