@@ -1,8 +1,9 @@
+from __future__ import absolute_import
 from fixture import DataTestCase, SQLAlchemyFixture
 from sqlalchemy import create_engine, text
 
-from models import metadata, UserTable, RegionTable
-from fixtures import RegionData, UserData
+from .models import metadata, UserTable, RegionTable
+from .fixtures import RegionData, UserData
 
 # import logging
 # logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
