@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from unittest2 import TestCase
 
 from sqlagg.sorting import OrderBy
