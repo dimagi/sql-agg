@@ -17,11 +17,16 @@ setup(
         'SQLAlchemy>=1.0.9',
     ],
     tests_require=[
-        'unittest2==0.5.1',
         'nose',
         'SQLAlchemy-Fixtures>=0.1.5',
         'fixture>=1.4',
         'psycopg2'
     ],
-    setup_requires=['nose']
+    setup_requires=['nose'],
+    classifiers=[
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3.4",
+        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
+    ]
 )
