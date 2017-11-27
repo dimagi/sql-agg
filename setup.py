@@ -6,7 +6,7 @@ except ImportError:
 
 setup(
     name='sqlagg',
-    version='0.8.0',
+    version='0.9.0',
     description='SQL aggregation tool',
     author='Dimagi',
     author_email='dev@dimagi.com',
