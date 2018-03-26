@@ -78,7 +78,7 @@ class SimpleQueryMeta(QueryMeta):
     def count(self, metadata, connection, filter_values):
         assert self.start is None
         assert self.limit is None
-        query = self._build_query(metadata).alias().count()
+        query = self._build_query(metadata, count=True).alias()
         return connection.execute(query, **filter_values).fetchall()[0][0]
 
     def totals(self, metadata, connection, filter_values, total_columns):
@@ -98,7 +98,7 @@ class SimpleQueryMeta(QueryMeta):
             connection.execute(query, **filter_values).fetchall()[0]
         ))
 
-    def _build_query(self, metadata):
+    def _build_query(self, metadata, count=False):
         self._check()
         try:
             table = metadata.tables[self.table_name]
@@ -106,7 +106,10 @@ class SimpleQueryMeta(QueryMeta):
             raise TableNotFoundException("Unable to query table, table not found: %s" % self.table_name)
 
         try:
-            query = sqlalchemy.select()
+            if count:
+                query = sqlalchemy.select([sqlalchemy.func.count('*')])
+            else:
+                query = sqlalchemy.select()
             if self.group_by:
                 cols = [c.column_name for c in self.columns]
                 alias = [c.alias for c in self.columns]
