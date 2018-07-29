@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from __future__ import division
 import time
 import logging
 from sqlalchemy import select, Table, Column, INT, and_, func, alias
