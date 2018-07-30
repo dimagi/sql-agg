@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import division
+from __future__ import unicode_literals
 from unittest import TestCase
 from . import BaseTest
 from sqlalchemy.orm import scoped_session, sessionmaker
