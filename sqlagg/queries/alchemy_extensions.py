@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from __future__ import unicode_literals
 from sqlalchemy.sql.expression import Executable, ClauseElement, ColumnElement, FunctionElement
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy import INT

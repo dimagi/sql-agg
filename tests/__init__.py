@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from __future__ import unicode_literals
 from fixture import DataTestCase, SQLAlchemyFixture
 from sqlalchemy import create_engine, text
 

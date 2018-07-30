@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from __future__ import unicode_literals
 from unittest import TestCase
 from . import BaseTest, engine
 from sqlalchemy.orm import sessionmaker
@@ -121,25 +122,25 @@ class TestSqlAggViews(BaseTest, TestCase):
         vc = QueryContext("user_table", group_by=['week'])
         vc.append_column(WeekColumn('date', alias='week'))
         result = vc.resolve(self.session.connection())
-        self.assertEquals(result, {1.0: {u'week': 1.0}, 5.0: {u'week': 5.0}, 9.0: {u'week': 9.0}})
+        self.assertEquals(result, {1.0: {'week': 1.0}, 5.0: {'week': 5.0}, 9.0: {'week': 9.0}})
 
     def test_day_of_week(self):
         vc = QueryContext("user_table", group_by=['dow'])
         vc.append_column(DayOfWeekColumn('date', alias='dow'))
         result = vc.resolve(self.session.connection())
-        self.assertEquals(result, {2.0: {u'dow': 2.0}, 5.0: {u'dow': 5.0}})
+        self.assertEquals(result, {2.0: {'dow': 2.0}, 5.0: {'dow': 5.0}})
 
     def test_day_of_year(self):
         vc = QueryContext("user_table", group_by=['doy'])
         vc.append_column(DayOfYearColumn('date', alias='doy'))
         result = vc.resolve(self.session.connection())
-        self.assertEquals(result, {1.0: {u'doy': 1.0}, 32.0: {u'doy': 32.0}, 60.0: {u'doy': 60.0}})
+        self.assertEquals(result, {1.0: {'doy': 1.0}, 32.0: {'doy': 32.0}, 60.0: {'doy': 60.0}})
 
     def test_quarter(self):
         vc = QueryContext("user_table", group_by=['q'])
         vc.append_column(YearQuarterColumn('date', alias='q'))
         result = vc.resolve(self.session.connection())
-        self.assertEquals(result, {1.0: {u'q': 1.0}})
+        self.assertEquals(result, {1.0: {'q': 1.0}})
 
     def _test_view(self, view, expected):
         data = self._get_view_data(view)
