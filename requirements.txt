@@ -1,5 +1,0 @@
-sqlalchemy==1.0.9
-SQLAlchemy-Fixtures>=0.1.5
-fixture>=1.4
-nose
-psycopg2
