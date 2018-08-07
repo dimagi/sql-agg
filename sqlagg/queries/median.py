@@ -72,6 +72,9 @@ class MedianQueryMeta(QueryMeta):
         result = connection.execute(median_query).fetchall()
         return result
 
+    def get_query_string(self, metadata, connection):
+        return "Median Query: {} as {} (SQL printing not supported)".format(self.key, self.alias)
+
     def _get_table_name(self, prefix):
         return "%s_%s_%s_%s" % (prefix, self.table_name, self.key, str(time.time()).replace(".", "_"))
 
