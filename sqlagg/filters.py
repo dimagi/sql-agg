@@ -19,9 +19,6 @@ class SqlFilter(object):
     def build_expression(self, table):
         raise NotImplementedError()
 
-    def __str__(self):
-        return 'SqlFilter(%s)' % self.build_expression()
-
 
 class RawFilter(SqlFilter):
     def __init__(self, expression):
