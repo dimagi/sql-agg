@@ -8,6 +8,11 @@ from sqlalchemy.sql import operators, and_, or_, not_
 from sqlagg.exceptions import ColumnNotFoundException, SqlAggException
 
 
+class NotEqMixin(object):
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+
 def get_column(table, column_name):
     for column in table.c:
         if column.name == column_name:
@@ -15,7 +20,7 @@ def get_column(table, column_name):
     raise ColumnNotFoundException('column with name "%s" not found' % column_name)
 
 
-class SqlFilter(object):
+class SqlFilter(NotEqMixin):
     def build_expression(self, table):
         raise NotImplementedError()
 
@@ -26,6 +31,12 @@ class RawFilter(SqlFilter):
 
     def build_expression(self, table):
         return text(self.expression)
+
+    def __eq__(self, other):
+        return isinstance(other, RawFilter) and self.expression == other.expression
+
+    def __hash__(self):
+        return hash((RawFilter, self.expression))
 
 
 class BasicFilter(SqlFilter):
@@ -43,6 +54,17 @@ class BasicFilter(SqlFilter):
 
         return self.operator(get_column(table, self.column_name), bindparam(self.parameter))
 
+    def __eq__(self, other):
+        return (
+            isinstance(other, BasicFilter)
+            and self.column_name == other.column_name
+            and self.parameter == other.parameter
+            and self.operator == other.operator
+        )
+
+    def __hash__(self):
+        return hash((type(self), self.column_name, self.parameter, self.operator))
+
 
 class BetweenFilter(SqlFilter):
     def __init__(self, column_name, lower_param, upper_param):
@@ -54,6 +76,16 @@ class BetweenFilter(SqlFilter):
         return get_column(table, self.column_name).between(
             bindparam(self.lower_param), bindparam(self.upper_param)
         )
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, BetweenFilter)
+            and self.column_name == other.column_name
+            and self.lower_param == other.lower_param
+            and self.upper_param == other.upper_param
+        )
+    def __hash__(self):
+        return hash((BetweenFilter, self.column_name, self.lower_param, self.upper_param))
 
 
 class GTFilter(BasicFilter):
@@ -91,12 +123,30 @@ class INFilter(BasicFilter):
             tuple(bindparam(param) for param in self.parameter)
         )
 
+    def __eq__(self, other):
+        return (
+            isinstance(other, INFilter)
+            and self.column_name == other.column_name
+            and self.operator == other.operator
+            and sorted(self.parameter) == sorted(other.parameter)
+        )
+
+    def __hash__(self):
+        return hash((type(self), self.column_name, self.operator, sorted(self.parameter)))
+
+
 class ISNULLFilter(SqlFilter):
     def __init__(self, column_name):
         self.column_name = column_name
 
     def build_expression(self, table):
         return get_column(table, self.column_name).is_(None)
+
+    def __eq__(self, other):
+        return isinstance(other, ISNULLFilter) and self.column_name == other.column_name
+
+    def __hash__(self):
+        return hash((ISNULLFilter, self.column_name))
 
 
 class NOTNULLFilter(SqlFilter):
@@ -106,6 +156,12 @@ class NOTNULLFilter(SqlFilter):
     def build_expression(self, table):
         return get_column(table, self.column_name).isnot(None)
 
+    def __eq__(self, other):
+        return isinstance(other, NOTNULLFilter) and self.column_name == other.column_name
+
+    def __hash__(self):
+        return hash((NOTNULLFilter, self.column_name))
+
 
 class NOTFilter(SqlFilter):
     def __init__(self, filter):
@@ -113,6 +169,12 @@ class NOTFilter(SqlFilter):
 
     def build_expression(self, table):
         return not_(self.filter.build_expression(table))
+
+    def __eq__(self, other):
+        return isinstance(other, NOTFilter) and self.filter == other.filter
+
+    def __hash__(self):
+        return hash((NOTFilter, self.filter))
 
 
 class ANDFilter(SqlFilter):
@@ -126,6 +188,12 @@ class ANDFilter(SqlFilter):
     def build_expression(self, table):
         return and_(*[f.build_expression(table) for f in self.filters])
 
+    def __eq__(self, other):
+        return isinstance(other, ANDFilter) and set(self.filters) == set(other.filters)
+
+    def __hash__(self):
+        return hash((NOTFilter,) + tuple(sorted(self.filters)))
+
 
 class ORFilter(SqlFilter):
     """
@@ -137,6 +205,12 @@ class ORFilter(SqlFilter):
 
     def build_expression(self, table):
         return or_(*[f.build_expression(table) for f in self.filters])
+
+    def __eq__(self, other):
+        return isinstance(other, ORFilter) and set(self.filters) == set(other.filters)
+
+    def __hash__(self):
+        return hash((ORFilter,) + tuple(sorted(self.filters)))
 
 
 RAW = RawFilter
