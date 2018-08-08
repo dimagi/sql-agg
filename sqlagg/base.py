@@ -81,7 +81,7 @@ class SimpleQueryMeta(QueryMeta):
 
     def get_query_string(self, metadata, connection):
         query = self._build_query(metadata)
-        return query.compile(connection)
+        return str(query.compile(connection))
 
     def count(self, metadata, connection, filter_values):
         assert self.start is None
@@ -271,6 +271,7 @@ class QueryContext(object):
 
     def get_query_strings(self, connection):
         """Useful for debugging large queryies"""
+        self.connection = connection
         return [
             qm.get_query_string(self.metadata, connection)
             for qm in self.query_meta.values()
@@ -320,7 +321,11 @@ class BaseColumn(SqlAggColumn):
 
     @property
     def column_key(self):
-        return self.table_name, str(self.filters), str(self.group_by)
+        return (
+            self.table_name,
+            tuple(sorted(self.filters)) if self.filters else None,
+            tuple(self.group_by) if self.group_by else None
+        )
 
     @property
     def sql_column(self):
@@ -344,7 +349,11 @@ class CustomQueryColumn(BaseColumn, QueryColumn):
 
     @property
     def column_key(self):
-        return self.name, self.key, self.table_name, str(self.filters), str(self.group_by)
+        return (
+            self.name, self.key, self.table_name,
+            tuple(sorted(self.filters)) if self.filters else None,
+            tuple(self.group_by) if self.group_by else None
+        )
 
 
 class AliasColumn(SqlAggColumn):

@@ -71,8 +71,8 @@ class TestSqlAgg(BaseTest, TestCase):
         vc.append_column(user)
         vc.append_column(i_a)
         vc.append_column(i_b)
+        self.assertEquals(2, len(vc.get_query_strings(self.session.connection())))
         data = vc.resolve(self.session.connection(), filter_values)
-
         self.assertEqual(data['user1']['indicator_a'], 1)
         self.assertNotIn('indicator_b', data['user1'])
         self.assertEqual(data['user2']['indicator_a'], 0)

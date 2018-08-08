@@ -1,6 +1,8 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 from unittest import TestCase
+
+from sqlagg.filters import EQ
 from . import BaseTest, engine
 from sqlalchemy.orm import sessionmaker
 
@@ -22,6 +24,31 @@ class TestSqlAggViews(BaseTest, TestCase):
         self.trans.commit()
         self.session.close()
         self.connection.close()
+
+    def test_column_key(self):
+        self.assertEquals(hash(SumColumn("").column_key), hash(SumColumn("").column_key))
+        self.assertNotEquals(
+            hash(SumColumn("", table_name='a').column_key),
+            hash(SumColumn("", table_name='b').column_key)
+        )
+        self.assertEquals(
+            hash(SumColumn("", filters=[EQ('a', 'b')]).column_key),
+            hash(SumColumn("", filters=[EQ('a', 'b')]).column_key)
+        )
+        # different filter order doesn't matter
+        self.assertEquals(
+            hash(SumColumn("", filters=[EQ('a', 'b'), EQ('c', 'd')]).column_key),
+            hash(SumColumn("", filters=[EQ('c', 'd'), EQ('a', 'b')]).column_key)
+        )
+        self.assertEquals(
+            hash(SumColumn("", filters=[EQ('a', 'b')], group_by=['month', 'day']).column_key),
+            hash(SumColumn("", filters=[EQ('a', 'b')], group_by=['month', 'day']).column_key)
+        )
+        # different group order does matter
+        self.assertNotEquals(
+            hash(SumColumn("", filters=[EQ('a', 'b')], group_by=['month', 'day']).column_key),
+            hash(SumColumn("", filters=[EQ('a', 'b')], group_by=['day', 'month']).column_key)
+        )
 
     def test_missing_data(self):
         self.assertIsNone(SumColumn("not there").get_value({}))
