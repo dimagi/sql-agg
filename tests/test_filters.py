@@ -104,6 +104,9 @@ class TestSqlAggViews(TestCase):
         self.assertEquals(a, INFilter(self.column_name, ('option_2', 'option_1')))
 
     def _test_equality(self, filterA, filterB, filterC):
+        self.assertEquals(hash(filterA), hash(filterB))
         self.assertEqual(filterA, filterB)
         self.assertNotEquals(filterA, filterC)
+        self.assertNotEquals(hash(filterA), hash(filterC))
         self.assertNotEquals(filterB, filterC)
+        self.assertNotEquals(hash(filterB), hash(filterC))

@@ -152,7 +152,7 @@ class INFilter(BasicFilter):
         )
 
     def __hash__(self):
-        return hash((type(self), self.column_name, self.operator, sorted(self.parameter)))
+        return hash((type(self), self.column_name, self.operator, tuple(sorted(self.parameter))))
 
 
 class ISNULLFilter(SqlFilter):
