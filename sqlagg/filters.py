@@ -5,7 +5,7 @@ import collections
 from sqlalchemy import bindparam, text
 from sqlalchemy.sql import operators, and_, or_, not_
 
-from sqlagg.exceptions import ColumnNotFoundException
+from sqlagg.exceptions import ColumnNotFoundException, SqlAggException
 
 
 def get_column(table, column_name):
@@ -39,7 +39,7 @@ class BasicFilter(SqlFilter):
 
     def build_expression(self, table):
         if not self.operator:
-            raise 'Operator missing'
+            raise SqlAggException('Operator missing')
 
         return self.operator(get_column(table, self.column_name), bindparam(self.parameter))
 
