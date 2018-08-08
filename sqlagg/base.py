@@ -81,7 +81,7 @@ class SimpleQueryMeta(QueryMeta):
 
     def get_query_string(self, metadata, connection):
         query = self._build_query(metadata)
-        return query.compile(connection)
+        return str(query.compile(connection))
 
     def count(self, metadata, connection, filter_values):
         assert self.start is None
