@@ -271,6 +271,7 @@ class QueryContext(object):
 
     def get_query_strings(self, connection):
         """Useful for debugging large queryies"""
+        self.connection = connection
         return [
             qm.get_query_string(self.metadata, connection)
             for qm in self.query_meta.values()
