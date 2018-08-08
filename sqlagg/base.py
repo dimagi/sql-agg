@@ -46,6 +46,9 @@ class QueryMeta(object):
     def execute(self, metadata, connection, filter_values):
         raise NotImplementedError()
 
+    def get_query_string(self, metadata, connection):
+        raise NotImplementedError
+
 
 class SimpleQueryMeta(QueryMeta):
     """
@@ -75,6 +78,10 @@ class SimpleQueryMeta(QueryMeta):
     def execute(self, metadata, connection, filter_values):
         query = self._build_query(metadata)
         return connection.execute(query, **filter_values).fetchall()
+
+    def get_query_string(self, metadata, connection):
+        query = self._build_query(metadata)
+        return query.compile(connection)
 
     def count(self, metadata, connection, filter_values):
         assert self.start is None
@@ -261,6 +268,13 @@ class QueryContext(object):
                     data.update(kvp for kvp in r.items())
 
         return data
+
+    def get_query_strings(self, connection):
+        """Useful for debugging large queryies"""
+        return [
+            qm.get_query_string(self.metadata, connection)
+            for qm in self.query_meta.values()
+        ]
 
     def __str__(self):
         return str(self.query_meta)
