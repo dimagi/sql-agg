@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 import collections
+from functools import total_ordering
 
 from sqlalchemy import bindparam, text
 from sqlalchemy.sql import operators, and_, or_, not_
@@ -20,9 +21,14 @@ def get_column(table, column_name):
     raise ColumnNotFoundException('column with name "%s" not found' % column_name)
 
 
+@total_ordering
 class SqlFilter(NotEqMixin):
     def build_expression(self, table):
         raise NotImplementedError()
+
+    def __lt__(self, other):
+        """Ordering is required for consistent sorting when creating column keys"""
+        return hash(self) < hash(other)
 
 
 class RawFilter(SqlFilter):

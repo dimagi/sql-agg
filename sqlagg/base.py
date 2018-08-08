@@ -321,7 +321,11 @@ class BaseColumn(SqlAggColumn):
 
     @property
     def column_key(self):
-        return self.table_name, str(self.filters), str(self.group_by)
+        return (
+            self.table_name,
+            tuple(sorted(self.filters)) if self.filters else None,
+            tuple(self.group_by) if self.group_by else None
+        )
 
     @property
     def sql_column(self):
@@ -345,7 +349,11 @@ class CustomQueryColumn(BaseColumn, QueryColumn):
 
     @property
     def column_key(self):
-        return self.name, self.key, self.table_name, str(self.filters), str(self.group_by)
+        return (
+            self.name, self.key, self.table_name,
+            tuple(sorted(self.filters)) if self.filters else None,
+            tuple(self.group_by) if self.group_by else None
+        )
 
 
 class AliasColumn(SqlAggColumn):
