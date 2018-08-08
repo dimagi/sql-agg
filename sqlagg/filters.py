@@ -44,9 +44,13 @@ class RawFilter(SqlFilter):
     def __hash__(self):
         return hash((RawFilter, self.expression))
 
+    def __repr__(self):
+        return "SQL({})".format(self.expression)
+
 
 class BasicFilter(SqlFilter):
     operator = None
+    operator_string = None
 
     def __init__(self, column_name, parameter, operator=None):
         self.column_name = column_name
@@ -70,6 +74,9 @@ class BasicFilter(SqlFilter):
 
     def __hash__(self):
         return hash((type(self), self.column_name, self.parameter, self.operator))
+
+    def __repr__(self):
+        return "SQL({} {} {})".format(self.column_name, self.operator_string, self.parameter)
 
 
 class BetweenFilter(SqlFilter):
@@ -96,32 +103,39 @@ class BetweenFilter(SqlFilter):
 
 class GTFilter(BasicFilter):
     operator = operators.gt
+    operator_string = '>'
 
 
 class GTEFilter(BasicFilter):
     operator = operators.ge
+    operator_string = '>='
 
 
 class LTFilter(BasicFilter):
     operator = operators.lt
+    operator_string = '<'
 
 
 class LTEFilter(BasicFilter):
     operator = operators.le
+    operator_string = '<='
 
 
 class EQFilter(BasicFilter):
     operator = operators.eq
+    operator_string = '='
 
 
 class NOTEQFilter(BasicFilter):
     operator = operators.ne
+    operator_string = '!='
 
 
 class INFilter(BasicFilter):
     """
     This filter requires that the parameter value be a tuple.
     """
+    operator_string = 'in'
     def build_expression(self, table):
         assert isinstance(self.parameter, collections.Iterable)
         return operators.in_op(
@@ -154,6 +168,9 @@ class ISNULLFilter(SqlFilter):
     def __hash__(self):
         return hash((ISNULLFilter, self.column_name))
 
+    def __repr__(self):
+        return "SQL({} IS NULL)"
+
 
 class NOTNULLFilter(SqlFilter):
     def __init__(self, column_name):
@@ -167,6 +184,9 @@ class NOTNULLFilter(SqlFilter):
 
     def __hash__(self):
         return hash((NOTNULLFilter, self.column_name))
+
+    def __repr__(self):
+        return "SQL({} NOT NULL)"
 
 
 class NOTFilter(SqlFilter):
@@ -200,6 +220,9 @@ class ANDFilter(SqlFilter):
     def __hash__(self):
         return hash((NOTFilter,) + tuple(sorted(self.filters)))
 
+    def __repr__(self):
+        return "SQL({})".format(' AND '.join(self.filters))
+
 
 class ORFilter(SqlFilter):
     """
@@ -217,6 +240,9 @@ class ORFilter(SqlFilter):
 
     def __hash__(self):
         return hash((ORFilter,) + tuple(sorted(self.filters)))
+
+    def __repr__(self):
+        return "SQL({})".format(' OR '.join(self.filters))
 
 
 RAW = RawFilter
