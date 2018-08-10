@@ -1,16 +1,23 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 from __future__ import unicode_literals
+
+import collections
 from collections import OrderedDict
 
 import sqlalchemy
 
-from sqlagg.exceptions import TableNotFoundException, ColumnNotFoundException
+from sqlagg.exceptions import TableNotFoundException, ColumnNotFoundException, SqlAggException, \
+    DuplicateColumnsException
 from sqlagg.filters import SqlFilter
 from six.moves import zip
 
 
 class SqlColumn(object):
+    @property
+    def label(self):
+        raise NotImplementedError()
+
     def build_column(self, sql_table):
         raise NotImplementedError()
 
@@ -21,13 +28,17 @@ class SimpleSqlColumn(SqlColumn):
     """
     def __init__(self, column_name, aggregate_fn=None, alias=None):
         self.column_name = column_name
-        self.alias = alias or column_name
+        self.alias = alias
         self.aggregate_fn = aggregate_fn
+
+    @property
+    def label(self):
+        return self.alias or self.column_name
 
     def build_column(self, selectable):
         table_column = selectable.c[self.column_name]
         sql_col = self.aggregate_fn(table_column) if self.aggregate_fn else table_column
-        return sql_col.label(self.alias)
+        return sql_col.label(self.label)
 
     def __repr__(self):
         return "SqlColumn(column_name=%s)" % self.column_name
@@ -74,6 +85,14 @@ class SimpleQueryMeta(QueryMeta):
 
             for g in groups:
                 self.columns.append(SimpleSqlColumn(g, aggregate_fn=None, alias=g))
+
+        labels = [col.label for col in self.columns]
+        duplicates = [label for label, count in collections.Counter(labels).items() if count > 1]
+        if duplicates:
+            raise DuplicateColumnsException(
+                'Query has duplicate columns: {}. '
+                'Use aliases to disambiguate them.'.format(', '.join(duplicates))
+            )
 
     def execute(self, metadata, connection, filter_values):
         query = self._build_query(metadata)

@@ -105,7 +105,11 @@ class ConditionalColumn(SqlColumn):
         self.column_name = column_name
         self.whens = whens
         self.else_ = else_
-        self.alias = alias or column_name
+        self.alias = alias
+
+    @property
+    def label(self):
+        return self.alias or self.column_name
 
     def build_column(self, sql_table):
         if self.column_name:
@@ -120,4 +124,4 @@ class ConditionalColumn(SqlColumn):
 
             expr = case(whens=whens, else_=self.else_)
 
-        return self.aggregate_fn(expr).label(self.alias)
+        return self.aggregate_fn(expr).label(self.label)
