@@ -2,6 +2,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import unicode_literals
 from unittest import TestCase
+
+from sqlagg.exceptions import DuplicateColumnsException
 from . import BaseTest
 from sqlalchemy.orm import scoped_session, sessionmaker
 from datetime import date
@@ -236,6 +238,16 @@ class TestSqlAgg(BaseTest, TestCase):
         self.assertEqual(data['user1']['indicator_b'], 2)
         self.assertEqual(data['user2']['indicator_a'], 2)
         self.assertEqual(data['user2']['indicator_b'], 2)
+
+    def test_duplicate_columns(self):
+        vc = QueryContext("user_table")
+        vc.append_column(SimpleColumn("user"))
+        vc.append_column(SumColumn("indicator_a"))
+        vc.append_column(AggregateColumn(
+            sum, SumColumn("indicator_a"), CountColumn("indicator_b")
+        ))
+        with self.assertRaises(DuplicateColumnsException):
+            vc.resolve(self.session.connection())
 
     def _get_user_data(self, filter_values, filters):
         vc = QueryContext("user_table", filters=filters, group_by=["user"])
