@@ -21,13 +21,13 @@ class SimpleSqlColumn(SqlColumn):
     """
     def __init__(self, column_name, aggregate_fn=None, alias=None):
         self.column_name = column_name
-        self.alias = alias or column_name
+        self.alias = alias
         self.aggregate_fn = aggregate_fn
 
     def build_column(self, selectable):
         table_column = selectable.c[self.column_name]
         sql_col = self.aggregate_fn(table_column) if self.aggregate_fn else table_column
-        return sql_col.label(self.alias)
+        return sql_col.label(self.alias or self.column_name)
 
     def __repr__(self):
         return "SqlColumn(column_name=%s)" % self.column_name
