@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
-from sqlalchemy import func, distinct, case, text
+from sqlalchemy import func, distinct, case, text, cast, Integer
 from .queries import MedianQueryMeta
 from .base import BaseColumn, CustomQueryColumn, SqlColumn
 import six
@@ -61,6 +61,10 @@ class MeanColumn(BaseColumn):
         value = super(MeanColumn, self).get_value(row)
         if value is not None:
             return float(value)
+
+
+class NonzeroSumColumn(BaseColumn):
+    aggregate_fn = lambda _, column: cast(func.sum(column) > 0, Integer)
 
 
 class CountUniqueColumn(BaseColumn):

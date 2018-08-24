@@ -11,6 +11,7 @@ class UserData(DataSet):
         indicator_a = 1
         indicator_b = 1
         indicator_c = 1
+        indicator_d = 0
 
     class r2:
         user = "user1"
@@ -24,12 +25,14 @@ class UserData(DataSet):
         indicator_a = 0
         indicator_b = 3
         indicator_c = 2
+        indicator_d = 0
 
     class r4:
         user = "user2"
         date = datetime.date(2013, 3, 1)
         indicator_a = 2
         indicator_b = 1
+
 
 
 class RegionData(DataSet):

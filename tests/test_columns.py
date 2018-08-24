@@ -7,7 +7,8 @@ from . import BaseTest, engine
 from sqlalchemy.orm import sessionmaker
 
 from sqlagg import *
-from sqlagg.columns import MonthColumn, DayColumn, YearColumn, WeekColumn, CountUniqueColumn, DayOfWeekColumn, DayOfYearColumn, YearQuarterColumn
+from sqlagg.columns import MonthColumn, DayColumn, YearColumn, WeekColumn, CountUniqueColumn, DayOfWeekColumn, \
+    DayOfYearColumn, YearQuarterColumn, NonzeroSumColumn
 
 Session = sessionmaker()
 
@@ -73,6 +74,12 @@ class TestSqlAggViews(BaseTest, TestCase):
 
     def test_unique_2(self):
         self._test_view(CountUniqueColumn("sub_region", table_name="region_table"), 3)
+
+    def test_nonzero_sum(self):
+        self._test_view(NonzeroSumColumn("indicator_a"), 1)
+        self._test_view(NonzeroSumColumn("indicator_b"), 1)
+        self._test_view(NonzeroSumColumn("indicator_c"), 1)
+        self._test_view(NonzeroSumColumn("indicator_d"), 0)
 
     def test_median(self):
         self._test_view(MedianColumn("indicator_a"), 1.5)
