@@ -32,8 +32,8 @@ vc.append_column(i_a)
 vc.append_column(i_b)
 
 filter_values={
-    "startdate": date(2012, 01, 01),
-    "enddate": date(2012, 03, 01)
+    "startdate": date(2012, 1, 1),
+    "enddate": date(2012, 3, 1)
     }
 
 # resolve the query context with the filter values (connection is an SQLAlchemy connection)
@@ -172,3 +172,23 @@ Any filter expression can be expressed using a RawFilter:
 In this case the same filter could be expressed as follows:
 
 `AND([EQ('user', 'username'), BETWEEN('date', 'start', 'end'])`
+
+# Development
+
+To install dependencies run
+
+`pip install .`
+
+## Running Tests
+
+First create an environment variable for the appropriate connection string:
+
+```bash
+export SQLAGG_TEST_CONNECTION_STRING='postgresql://user:pass@localhost:5432/sqlagg_test
+```
+
+Then run the following
+
+```python
+python setup.py test
+```
