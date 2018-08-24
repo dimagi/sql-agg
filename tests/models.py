@@ -12,7 +12,8 @@ user_table = Table("user_table",
                    Column("date", DATE, primary_key=True, autoincrement=False),
                    Column("indicator_a", INT),
                    Column("indicator_b", INT),
-                   Column("indicator_c", INT))
+                   Column("indicator_c", INT),
+                   Column("indicator_d", INT))
 
 
 class UserTable(object):
