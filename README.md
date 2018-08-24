@@ -32,8 +32,8 @@ vc.append_column(i_a)
 vc.append_column(i_b)
 
 filter_values={
-    "startdate": date(2012, 01, 01),
-    "enddate": date(2012, 03, 01)
+    "startdate": date(2012, 1, 1),
+    "enddate": date(2012, 3, 1)
     }
 
 # resolve the query context with the filter values (connection is an SQLAlchemy connection)
