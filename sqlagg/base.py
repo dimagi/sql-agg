@@ -143,7 +143,7 @@ class SimpleQueryMeta(QueryMeta):
                     elif group_key in alias:
                         aliased_column = [col.build_column(table) for col in self.columns if col.alias == group_key]
                         assert len(aliased_column) == 1
-                        query.append_group_by(aliased_column[0])
+                        query.append_group_by(group_key)
 
             for c in self.columns:
                 query.append_column(c.build_column(table))
