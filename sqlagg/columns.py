@@ -128,4 +128,6 @@ class ConditionalColumn(SqlColumn):
 
             expr = case(whens=whens, else_=self.else_)
 
-        return self.aggregate_fn(expr).label(self.label)
+        if self.aggregate_fn:
+            expr = self.aggregate_fn(expr)
+        return expr.label(self.label)

@@ -8,7 +8,7 @@ from sqlalchemy.orm import sessionmaker
 
 from sqlagg import *
 from sqlagg.columns import MonthColumn, DayColumn, YearColumn, WeekColumn, CountUniqueColumn, DayOfWeekColumn, \
-    DayOfYearColumn, YearQuarterColumn, NonzeroSumColumn
+    DayOfYearColumn, YearQuarterColumn, NonzeroSumColumn, ConditionalAggregation
 
 Session = sessionmaker()
 
@@ -133,6 +133,21 @@ class TestSqlAggViews(BaseTest, TestCase):
         # sum(case user when 'user1' then indicator_a else 0)
         col = SumWhen(whens={"user_table.user = 'user1'": 'indicator_a'}, else_=0, alias='a')
         self._test_view(col, 4)
+
+    def test_group_by_conditional(self):
+        from sqlalchemy import func
+        vc = QueryContext("user_table", group_by=['bucket'])
+        vc.append_column(ConditionalAggregation(whens={
+            "indicator_a between 0 and 1": "'0-1'",
+            "indicator_a between 2 and 2": "'2'",
+        }, else_='3+', alias='bucket'))
+        vc.append_column(CountColumn('user'))
+        result = vc.resolve(self.session.connection())
+        self.assertEquals(result, {
+            '0-1': {'bucket': '0-1', 'user': 2},
+            '2': {'bucket': '2', 'user': 1},
+            '3+': {'bucket': '3+', 'user': 1},
+        })
 
     def test_month(self):
         vc = QueryContext("user_table", group_by=['month'])
