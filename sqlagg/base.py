@@ -141,9 +141,9 @@ class SimpleQueryMeta(QueryMeta):
                     if group_key in cols:
                         query.append_group_by(table.c[group_key])
                     elif group_key in alias:
-                        aliased_column = [col.build_column(table) for col in self.columns if col.alias == group_key]
-                        assert len(aliased_column) == 1
-                        query.append_group_by(aliased_column[0])
+                        aliased_columns = [col for col in self.columns if col.alias == group_key]
+                        assert len(aliased_columns) == 1, "Only one column should have this alias"
+                        query.append_group_by(group_key)
 
             for c in self.columns:
                 query.append_column(c.build_column(table))
