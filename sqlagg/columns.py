@@ -122,12 +122,12 @@ class ConditionalColumn(SqlColumn):
         if self.column_name:
             expr = case(value=sql_table.c[self.column_name], whens=self.whens, else_=self.else_)
         else:
-            whens = {}
+            whens = []
             for when, then in self.whens.items():
                 if isinstance(then, six.string_types):
-                    whens[text(when)] = text(then)
+                    whens.append((text(when), text(then)))
                 else:
-                    whens[text(when)] = then
+                    whens.append((text(when), then))
 
             expr = case(whens=whens, else_=self.else_)
 
