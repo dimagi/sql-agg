@@ -112,14 +112,11 @@ class SimpleQueryMeta(QueryMeta):
         assert self.start is None
         assert self.limit is None
 
-        def _generate_total_column(column_name, selectable):
-            from sqlagg import SumColumn
-            return SumColumn(column_name).sql_column.build_column(selectable)
-
-        subquery = self._build_query(metadata).alias()
-        query = sqlalchemy.select().select_from(subquery)
-        for total_column in total_columns:
-            query.append_column(_generate_total_column(total_column, subquery))
+        columns = [
+            SimpleSqlColumn(c, sqlalchemy.func.sum)
+            for c in total_columns
+        ]
+        query = self._build_query_generic(metadata, columns, filters=self.filters)
         return dict(zip(
             total_columns,
             connection.execute(query, **filter_values).fetchall()[0]
@@ -127,6 +124,12 @@ class SimpleQueryMeta(QueryMeta):
 
     def _build_query(self, metadata):
         self._check()
+        return self._build_query_generic(
+            metadata, self.columns, self.group_by,
+            self.filters, self.order_by, self.start, self.limit
+        )
+
+    def _build_query_generic(self, metadata, columns, group_by=None, filters=None, order_by=None, start=None, limit=None):
         try:
             table = metadata.tables[self.table_name]
         except KeyError:
@@ -134,38 +137,38 @@ class SimpleQueryMeta(QueryMeta):
 
         try:
             query = sqlalchemy.select()
-            if self.group_by:
-                cols = [c.column_name for c in self.columns]
-                alias = [c.alias for c in self.columns]
-                for group_key in self.group_by:
+            if group_by:
+                cols = [c.column_name for c in columns]
+                alias = [c.alias for c in columns]
+                for group_key in group_by:
                     if group_key in cols:
                         query.append_group_by(table.c[group_key])
                     elif group_key in alias:
-                        aliased_columns = [col.build_column(table) for col in self.columns if col.alias == group_key]
+                        aliased_columns = [col.build_column(table) for col in columns if col.alias == group_key]
                         assert len(aliased_columns) == 1, "Only one column should have this alias"
                         query.append_group_by(aliased_columns[0])
 
-            for c in self.columns:
+            for c in columns:
                 query.append_column(c.build_column(table))
         except KeyError as e:
             raise ColumnNotFoundException("Missing column in table (%s): %s" % (self.table_name, e))
 
-        if self.filters:
-            for filter in self.filters:
+        if filters:
+            for filter in filters:
                 query.append_whereclause(filter.build_expression(table))
 
         if not query.froms:
             query = query.select_from(table)
 
-        if self.order_by:
-            for order_by_column in self.order_by:
+        if order_by:
+            for order_by_column in order_by:
                 order = order_by_column.build_expression()
                 query = query.order_by(order)
 
-        if self.start is not None:
-            query = query.offset(self.start)
-        if self.limit is not None:
-            query = query.limit(self.limit)
+        if start is not None:
+            query = query.offset(start)
+        if limit is not None:
+            query = query.limit(limit)
 
         return query
 
