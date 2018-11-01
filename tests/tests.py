@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 from unittest import TestCase
 
 from sqlagg.exceptions import DuplicateColumnsException
+from sqlagg.sorting import OrderBy
 from . import BaseTest
 from sqlalchemy.orm import scoped_session, sessionmaker
 from datetime import date
@@ -231,10 +232,11 @@ class TestSqlAgg(BaseTest, TestCase):
             },
         )
 
-    def test_count(self):
+    def test_count_group_by(self):
         vc = QueryContext(
             "user_table",
             group_by=["user"],
+            order_by=[OrderBy("user", is_ascending=True)]
         )
 
         vc.append_column(SumColumn('indicator_a'))
