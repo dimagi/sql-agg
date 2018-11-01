@@ -105,7 +105,9 @@ class SimpleQueryMeta(QueryMeta):
     def count(self, metadata, connection, filter_values):
         assert self.start is None
         assert self.limit is None
-        query = self._build_query(metadata).alias().count()
+        self._check()
+        query = self._build_query_generic(metadata, self.columns, group_by=self.group_by, filters=self.filters)
+        query = query.alias().count()
         return connection.execute(query, **filter_values).fetchall()[0][0]
 
     def totals(self, metadata, connection, filter_values, total_columns):
@@ -150,6 +152,8 @@ class SimpleQueryMeta(QueryMeta):
                         aliased_columns = [col.build_column(table) for col in columns if col.alias == group_key]
                         assert len(aliased_columns) == 1, "Only one column should have this alias"
                         query.append_group_by(aliased_columns[0])
+                    else:
+                        raise SqlAggException("Group by column not present in query columns or aliases")
 
             for c in columns:
                 query.append_column(c.build_column(table))
