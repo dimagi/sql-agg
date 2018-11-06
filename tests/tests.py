@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 from unittest import TestCase
 
 from sqlagg.exceptions import DuplicateColumnsException
+from sqlagg.sorting import OrderBy
 from . import BaseTest
 from sqlalchemy.orm import scoped_session, sessionmaker
 from datetime import date
@@ -177,12 +178,9 @@ class TestSqlAgg(BaseTest, TestCase):
             group_by=["user"],
         )
 
-        for column_name in [
-            'indicator_a',
-            'indicator_b',
-            'indicator_c',
-        ]:
-            vc.append_column(SumColumn(column_name))
+        vc.append_column(MeanColumn('indicator_a'))
+        vc.append_column(SumColumn('indicator_b'))
+        vc.append_column(SumColumn('indicator_c'))
 
         self.assertEqual(
             vc.totals(
@@ -194,7 +192,7 @@ class TestSqlAgg(BaseTest, TestCase):
                 ],
             ),
             {
-                'indicator_a': 6,
+                'indicator_a': 3,
                 'indicator_b': 5,
                 'indicator_c': 3,
             },
@@ -230,6 +228,26 @@ class TestSqlAgg(BaseTest, TestCase):
                 'indicator_c': 1,
             },
         )
+
+    def test_count_group_by(self):
+        vc = QueryContext(
+            "user_table",
+            group_by=["user"],
+            order_by=[OrderBy("user", is_ascending=True)]
+        )
+
+        vc.append_column(SumColumn('indicator_a'))
+        self.assertEqual(2, vc.count(self.session.connection()))
+
+    def test_count_with_filter(self):
+        vc = QueryContext(
+            "user_table",
+            filters=[EQ('user', 'username')],
+            group_by=["user"],
+        )
+
+        vc.append_column(SumColumn('indicator_a'))
+        self.assertEqual(1, vc.count(self.session.connection(), {'username': 'user1'},))
 
     def test_user_view_data(self):
         data = self._get_user_view_data(None, None)
