@@ -178,12 +178,9 @@ class TestSqlAgg(BaseTest, TestCase):
             group_by=["user"],
         )
 
-        for column_name in [
-            'indicator_a',
-            'indicator_b',
-            'indicator_c',
-        ]:
-            vc.append_column(SumColumn(column_name))
+        vc.append_column(MeanColumn('indicator_a'))
+        vc.append_column(SumColumn('indicator_b'))
+        vc.append_column(SumColumn('indicator_c'))
 
         self.assertEqual(
             vc.totals(
@@ -195,7 +192,7 @@ class TestSqlAgg(BaseTest, TestCase):
                 ],
             ),
             {
-                'indicator_a': 6,
+                'indicator_a': 3,
                 'indicator_b': 5,
                 'indicator_c': 3,
             },

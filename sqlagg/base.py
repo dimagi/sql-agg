@@ -113,15 +113,15 @@ class SimpleQueryMeta(QueryMeta):
     def totals(self, metadata, connection, filter_values, total_columns):
         assert self.start is None
         assert self.limit is None
+        self._check()
 
-        def _generate_total_column(column_name, selectable):
-            from sqlagg import SumColumn
-            return SumColumn(column_name).sql_column.build_column(selectable)
-
-        subquery = self._build_query(metadata).alias()
+        subquery = self._build_query_generic(metadata, self.columns, self.group_by, self.filters).alias()
         query = sqlalchemy.select().select_from(subquery)
+
         for total_column in total_columns:
-            query.append_column(_generate_total_column(total_column, subquery))
+            column = SimpleSqlColumn(total_column, sqlalchemy.func.sum)
+            query.append_column(column.build_column(subquery))
+
         return dict(zip(
             total_columns,
             connection.execute(query, **filter_values).fetchall()[0]
