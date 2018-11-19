@@ -19,7 +19,7 @@ class SqlColumn(object):
     def label(self):
         raise NotImplementedError()
 
-    def build_column(self, sql_table):
+    def build_column(self):
         raise NotImplementedError()
 
 
@@ -36,7 +36,7 @@ class SimpleSqlColumn(SqlColumn):
     def label(self):
         return self.alias or self.column_name
 
-    def build_column(self, selectable):
+    def build_column(self):
         table_column = column(self.column_name)
         sql_col = self.aggregate_fn(table_column) if self.aggregate_fn else table_column
         return sql_col.label(self.label)
@@ -121,7 +121,7 @@ class SimpleQueryMeta(QueryMeta):
 
         for total_column in total_columns:
             column = SimpleSqlColumn(total_column, sqlalchemy.func.sum)
-            query.append_column(column.build_column(subquery))
+            query.append_column(column.build_column())
 
         return dict(zip(
             total_columns,
@@ -145,20 +145,20 @@ class SimpleQueryMeta(QueryMeta):
                     if group_key in cols:
                         query.append_group_by(column(group_key))
                     elif group_key in alias:
-                        aliased_columns = [col.build_column(None) for col in columns if col.alias == group_key]
+                        aliased_columns = [col.build_column() for col in columns if col.alias == group_key]
                         assert len(aliased_columns) == 1, "Only one column should have this alias"
                         query.append_group_by(aliased_columns[0])
                     else:
                         raise SqlAggException("Group by column not present in query columns or aliases")
 
             for c in columns:
-                query.append_column(c.build_column(None))
+                query.append_column(c.build_column())
         except KeyError as e:
             raise ColumnNotFoundException("Missing column in table (%s): %s" % (self.table_name, e))
 
         if filters:
             for filter in filters:
-                query.append_whereclause(filter.build_expression(None))
+                query.append_whereclause(filter.build_expression())
 
         if not query.froms:
             query = query.select_from(table(self.table_name))
