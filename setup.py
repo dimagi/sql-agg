@@ -20,7 +20,7 @@ setup(
     author='Dimagi',
     author_email='dev@dimagi.com',
     url='http://github.com/dimagi/sql-agg',
-    packages=['sqlagg', 'sqlagg.queries'],
+    packages=['sqlagg'],
     license='MIT',
     install_requires=[
         'SQLAlchemy>=1.0.9',
