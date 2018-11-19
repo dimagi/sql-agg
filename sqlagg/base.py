@@ -6,6 +6,7 @@ import collections
 from collections import OrderedDict
 
 import sqlalchemy
+from sqlalchemy import column, table
 
 from sqlagg.exceptions import TableNotFoundException, ColumnNotFoundException, SqlAggException, \
     DuplicateColumnsException
@@ -36,7 +37,7 @@ class SimpleSqlColumn(SqlColumn):
         return self.alias or self.column_name
 
     def build_column(self, selectable):
-        table_column = selectable.c[self.column_name]
+        table_column = column(self.column_name)
         sql_col = self.aggregate_fn(table_column) if self.aggregate_fn else table_column
         return sql_col.label(self.label)
 
@@ -136,36 +137,31 @@ class SimpleQueryMeta(QueryMeta):
 
     def _build_query_generic(self, metadata, columns, group_by=None, filters=None, order_by=None, start=None, limit=None):
         try:
-            table = metadata.tables[self.table_name]
-        except KeyError:
-            raise TableNotFoundException("Unable to query table, table not found: %s" % self.table_name)
-
-        try:
             query = sqlalchemy.select()
             if group_by:
                 cols = [c.column_name for c in columns]
                 alias = [c.alias for c in columns]
                 for group_key in group_by:
                     if group_key in cols:
-                        query.append_group_by(table.c[group_key])
+                        query.append_group_by(column(group_key))
                     elif group_key in alias:
-                        aliased_columns = [col.build_column(table) for col in columns if col.alias == group_key]
+                        aliased_columns = [col.build_column(None) for col in columns if col.alias == group_key]
                         assert len(aliased_columns) == 1, "Only one column should have this alias"
                         query.append_group_by(aliased_columns[0])
                     else:
                         raise SqlAggException("Group by column not present in query columns or aliases")
 
             for c in columns:
-                query.append_column(c.build_column(table))
+                query.append_column(c.build_column(None))
         except KeyError as e:
             raise ColumnNotFoundException("Missing column in table (%s): %s" % (self.table_name, e))
 
         if filters:
             for filter in filters:
-                query.append_whereclause(filter.build_expression(table))
+                query.append_whereclause(filter.build_expression(None))
 
         if not query.froms:
-            query = query.select_from(table)
+            query = query.select_from(table(self.table_name))
 
         if order_by:
             for order_by_column in order_by:
@@ -224,18 +220,7 @@ class QueryContext(object):
 
     @property
     def metadata(self):
-        if not hasattr(self, '_metadata'):
-            self._metadata = sqlalchemy.MetaData()
-            self._metadata.bind = self.connection
-
-            tables = [qm.table_name for qm in self.query_meta.values()]
-
-            def table_filter(table_name, metadata):
-                return table_name in tables
-
-            self._metadata.reflect(views=True, only=table_filter)
-
-        return self._metadata
+        return None
 
     def count(self, connection, filter_values=None):
         self.connection = connection

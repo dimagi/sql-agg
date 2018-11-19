@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 import collections
 from functools import total_ordering
 
-from sqlalchemy import bindparam, text
+from sqlalchemy import bindparam, text, column
 from sqlalchemy.sql import operators, and_, or_, not_
 
 from sqlagg.exceptions import ColumnNotFoundException, SqlAggException
@@ -62,7 +62,7 @@ class BasicFilter(SqlFilter):
         if not self.operator:
             raise SqlAggException('Operator missing')
 
-        return self.operator(get_column(table, self.column_name), bindparam(self.parameter))
+        return self.operator(column(self.column_name), bindparam(self.parameter))
 
     def __eq__(self, other):
         return (
@@ -86,7 +86,7 @@ class BetweenFilter(SqlFilter):
         self.upper_param = upper_param
 
     def build_expression(self, table):
-        return get_column(table, self.column_name).between(
+        return column(self.column_name).between(
             bindparam(self.lower_param), bindparam(self.upper_param)
         )
 
@@ -139,7 +139,7 @@ class INFilter(BasicFilter):
     def build_expression(self, table):
         assert isinstance(self.parameter, collections.Iterable)
         return operators.in_op(
-            get_column(table, self.column_name),
+            column(self.column_name),
             tuple(bindparam(param) for param in self.parameter)
         )
 
@@ -160,7 +160,7 @@ class ISNULLFilter(SqlFilter):
         self.column_name = column_name
 
     def build_expression(self, table):
-        return get_column(table, self.column_name).is_(None)
+        return column(self.column_name).is_(None)
 
     def __eq__(self, other):
         return isinstance(other, ISNULLFilter) and self.column_name == other.column_name
@@ -177,7 +177,7 @@ class NOTNULLFilter(SqlFilter):
         self.column_name = column_name
 
     def build_expression(self, table):
-        return get_column(table, self.column_name).isnot(None)
+        return column(self.column_name).isnot(None)
 
     def __eq__(self, other):
         return isinstance(other, NOTNULLFilter) and self.column_name == other.column_name

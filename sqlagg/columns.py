@@ -1,8 +1,7 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 from collections import OrderedDict
-from sqlalchemy import func, distinct, case, text, cast, Integer
-from .queries import MedianQueryMeta
+from sqlalchemy import func, distinct, case, text, cast, Integer, column
 from .base import BaseColumn, CustomQueryColumn, SqlColumn
 import six
 
@@ -115,7 +114,7 @@ class ConditionalColumn(SqlColumn):
 
     def build_column(self, sql_table):
         if self.column_name:
-            expr = case(value=sql_table.c[self.column_name], whens=self.whens, else_=self.else_)
+            expr = case(value=column(self.column_name), whens=self.whens, else_=self.else_)
         else:
             whens = []
             for when, then in self.whens.items():
