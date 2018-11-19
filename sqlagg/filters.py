@@ -6,19 +6,12 @@ from functools import total_ordering
 from sqlalchemy import bindparam, text, column
 from sqlalchemy.sql import operators, and_, or_, not_
 
-from sqlagg.exceptions import ColumnNotFoundException, SqlAggException
+from sqlagg.exceptions import SqlAggException
 
 
 class NotEqMixin(object):
     def __ne__(self, other):
         return not self.__eq__(other)
-
-
-def get_column(table, column_name):
-    for column in table.c:
-        if column.name == column_name:
-            return column
-    raise ColumnNotFoundException('column with name "%s" not found' % column_name)
 
 
 @total_ordering

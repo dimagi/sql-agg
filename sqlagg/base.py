@@ -8,7 +8,7 @@ from collections import OrderedDict
 import sqlalchemy
 from sqlalchemy import column, table
 
-from sqlagg.exceptions import TableNotFoundException, ColumnNotFoundException, SqlAggException, \
+from sqlagg.exceptions import ColumnNotFoundException, SqlAggException, \
     DuplicateColumnsException
 from sqlagg.filters import SqlFilter
 from six.moves import zip
