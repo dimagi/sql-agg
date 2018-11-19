@@ -72,11 +72,6 @@ class CountUniqueColumn(BaseColumn):
     aggregate_fn = lambda _, column: func.count(distinct(column))
 
 
-class MedianColumn(CustomQueryColumn):
-    query_cls = MedianQueryMeta
-    name = "median"
-
-
 class ConditionalAggregation(BaseColumn):
     def __init__(self, key=None, whens=None, else_=None, *args, **kwargs):
         super(ConditionalAggregation, self).__init__(key, *args, **kwargs)
