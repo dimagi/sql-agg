@@ -55,10 +55,10 @@ class QueryMeta(object):
     def append_column(self, view):
         pass
 
-    def execute(self, metadata, connection, filter_values):
+    def execute(self, connection, filter_values):
         raise NotImplementedError()
 
-    def get_query_string(self, metadata, connection):
+    def get_query_string(self, connection):
         raise NotImplementedError
 
 
@@ -95,28 +95,28 @@ class SimpleQueryMeta(QueryMeta):
                 'Use aliases to disambiguate them.'.format(', '.join(duplicates))
             )
 
-    def execute(self, metadata, connection, filter_values):
-        query = self._build_query(metadata)
+    def execute(self, connection, filter_values):
+        query = self._build_query()
         return connection.execute(query, **filter_values).fetchall()
 
-    def get_query_string(self, metadata, connection):
-        query = self._build_query(metadata)
+    def get_query_string(self, connection):
+        query = self._build_query()
         return str(query.compile(connection))
 
-    def count(self, metadata, connection, filter_values):
+    def count(self, connection, filter_values):
         assert self.start is None
         assert self.limit is None
         self._check()
-        query = self._build_query_generic(metadata, self.columns, group_by=self.group_by, filters=self.filters)
+        query = self._build_query_generic(self.columns, group_by=self.group_by, filters=self.filters)
         query = query.alias().count()
         return connection.execute(query, **filter_values).fetchall()[0][0]
 
-    def totals(self, metadata, connection, filter_values, total_columns):
+    def totals(self, connection, filter_values, total_columns):
         assert self.start is None
         assert self.limit is None
         self._check()
 
-        subquery = self._build_query_generic(metadata, self.columns, self.group_by, self.filters).alias()
+        subquery = self._build_query_generic(self.columns, self.group_by, self.filters).alias()
         query = sqlalchemy.select().select_from(subquery)
 
         for total_column in total_columns:
@@ -128,14 +128,14 @@ class SimpleQueryMeta(QueryMeta):
             connection.execute(query, **filter_values).fetchall()[0]
         ))
 
-    def _build_query(self, metadata):
+    def _build_query(self):
         self._check()
         return self._build_query_generic(
-            metadata, self.columns, self.group_by,
+            self.columns, self.group_by,
             self.filters, self.order_by, self.start, self.limit
         )
 
-    def _build_query_generic(self, metadata, columns, group_by=None, filters=None, order_by=None, start=None, limit=None):
+    def _build_query_generic(self, columns, group_by=None, filters=None, order_by=None, start=None, limit=None):
         try:
             query = sqlalchemy.select()
             if group_by:
@@ -218,16 +218,12 @@ class QueryContext(object):
                 start=self.start, limit=self.limit
             )
 
-    @property
-    def metadata(self):
-        return None
-
     def count(self, connection, filter_values=None):
         self.connection = connection
         query_meta_values = list(self.query_meta.values())
         if query_meta_values:
             return query_meta_values[0].count(
-                self.metadata, connection, filter_values or {}
+                connection, filter_values or {}
             )
         return 0
 
@@ -236,7 +232,7 @@ class QueryContext(object):
         query_meta_values = list(self.query_meta.values())
         if query_meta_values:
             return query_meta_values[0].totals(
-                self.metadata, connection, filter_values or {}, total_columns
+                connection, filter_values or {}, total_columns
             )
         return {column: None for column in total_columns}
 
@@ -262,7 +258,7 @@ class QueryContext(object):
 
         data = OrderedDict()
         for qm in self.query_meta.values():
-            result = qm.execute(self.metadata, self.connection, filter_values or {})
+            result = qm.execute(self.connection, filter_values or {})
 
             for r in result:
                 if not qm.group_by:
@@ -287,7 +283,7 @@ class QueryContext(object):
         """Useful for debugging large queryies"""
         self.connection = connection
         return [
-            qm.get_query_string(self.metadata, connection)
+            qm.get_query_string(connection)
             for qm in self.query_meta.values()
         ]
 
