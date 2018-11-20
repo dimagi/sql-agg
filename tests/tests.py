@@ -1,23 +1,30 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import unicode_literals
+
+from datetime import date
 from unittest import TestCase
 
-from sqlagg.exceptions import DuplicateColumnsException
-from sqlagg.sorting import OrderBy
-from . import BaseTest
+from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.orm import scoped_session, sessionmaker
-from datetime import date
+
 from sqlagg import *
 from sqlagg.columns import *
 from sqlagg.filters import LT, GTE, GT, AND, EQ
+from sqlagg.sorting import OrderBy
+from . import BaseTest
 
 
 class TestSqlAgg(BaseTest, TestCase):
     @classmethod
     def setUpClass(cls):
-        Session = scoped_session(sessionmaker(bind=cls.metadata().bind, autoflush=True))
-        cls.session = Session()
+        cls.Session = scoped_session(sessionmaker(bind=cls.metadata().bind, autoflush=True))
+        cls.session = cls.Session()
+
+    def tearDown(self):
+        self.session.close()
+        self.session = self.Session()
+        super(TestSqlAgg, self).tearDown()
 
     def test_single_group(self):
         data = self._get_user_data(None, None)
@@ -159,7 +166,7 @@ class TestSqlAgg(BaseTest, TestCase):
         vc.append_column(user)
         vc.append_column(i_a)
 
-        with self.assertRaises(TableNotFoundException):
+        with self.assertRaises(ProgrammingError):
             vc.resolve(self.session.connection())
 
     def test_missing_column(self):
@@ -169,7 +176,7 @@ class TestSqlAgg(BaseTest, TestCase):
         vc.append_column(user)
         vc.append_column(i_a)
 
-        with self.assertRaises(ColumnNotFoundException):
+        with self.assertRaises(ProgrammingError):
             vc.resolve(self.session.connection())
 
     def test_totals_no_filter(self):

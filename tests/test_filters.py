@@ -16,21 +16,15 @@ class TestSqlAggViews(TestCase):
             'column_name': cls.column_name,
         }
 
-        class MockTable(object):
-            pass
-
-        cls.mock_table = MockTable()
-        setattr(cls.mock_table, 'c', [Column(cls.column_name, type_=String)])
-
     def test_raw(self):
         a = RAW('fancy stuff')
-        self.assertEqual(str(a.build_expression(self.mock_table)), 'fancy stuff')
+        self.assertEqual(str(a.build_expression()), 'fancy stuff')
         self._test_equality(a, RAW('fancy stuff'), RAW('other'))
 
     def test_between(self):
         a = BETWEEN(self.column_name, 'start', 'end')
         self.assertEqual(
-            str(a.build_expression(self.mock_table)),
+            str(a.build_expression()),
             '%(column_name)s BETWEEN :start AND :end' % self.column_dict
         )
         self._test_equality(a, BETWEEN(self.column_name, 'start', 'end'), BETWEEN(self.column_name, 'start', 'other'))
@@ -38,7 +32,7 @@ class TestSqlAggViews(TestCase):
     def test_is_null(self):
         a = ISNULL(self.column_name)
         self.assertEqual(
-            str(a.build_expression(self.mock_table)),
+            str(a.build_expression()),
             '%(column_name)s IS NULL' % self.column_dict
         )
         self._test_equality(a, ISNULL(self.column_name), ISNULL('ohter'))
@@ -46,19 +40,19 @@ class TestSqlAggViews(TestCase):
     def test_not_null(self):
         a = NOTNULL(self.column_name)
         self.assertEqual(
-            str(a.build_expression(self.mock_table)),
+            str(a.build_expression()),
             '%(column_name)s IS NOT NULL' % self.column_dict
         )
         self._test_equality(a, NOTNULL(self.column_name), NOTNULL('other'))
 
     def test_not(self):
         a = NOT(RAW('fancy'))
-        self.assertEqual(str(a.build_expression(self.mock_table)), 'NOT fancy')
+        self.assertEqual(str(a.build_expression()), 'NOT fancy')
         self._test_equality(a, NOT(RAW('fancy')), NOT(RAW('other')))
 
     def test_and(self):
         a = AND([RAW('fancy'), RAW('good')])
-        self.assertEqual(str(a.build_expression(self.mock_table)), 'fancy AND good')
+        self.assertEqual(str(a.build_expression()), 'fancy AND good')
         self._test_equality(a, AND([RAW('fancy'), RAW('good')]), AND([RAW('fancy'), RAW('other')]))
         self.assertNotEquals(a, AND([RAW('fancy'), RAW('good'), RAW('other')]))
 
@@ -70,7 +64,7 @@ class TestSqlAggViews(TestCase):
 
     def test_or(self):
         a = OR([RAW('fancy'), RAW('good')])
-        self.assertEqual(str(a.build_expression(self.mock_table)), 'fancy OR good')
+        self.assertEqual(str(a.build_expression()), 'fancy OR good')
         self._test_equality(a, OR([RAW('fancy'), RAW('good')]), OR([RAW('fancy'), RAW('other')]))
         self.assertNotEquals(a, OR([RAW('fancy'), RAW('good'), RAW('other')]))
 
@@ -88,12 +82,12 @@ class TestSqlAggViews(TestCase):
             OR([
                 RAW('water'), RAW('hill')
             ])])
-        self.assertEqual(str(filter.build_expression(self.mock_table)), 'jack AND jill AND (water OR hill)')
+        self.assertEqual(str(filter.build_expression()), 'jack AND jill AND (water OR hill)')
 
     def test_in(self):
         a = INFilter(self.column_name, ('option_1', 'option_2'))
         self.assertEqual(
-            str(a.build_expression(self.mock_table)),
+            str(a.build_expression()),
             '%(column_name)s IN (:option_1, :option_2)' % self.column_dict
         )
         self._test_equality(

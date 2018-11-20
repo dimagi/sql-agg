@@ -3,10 +3,10 @@ from __future__ import unicode_literals
 import collections
 from functools import total_ordering
 
-from sqlalchemy import bindparam, text
+from sqlalchemy import bindparam, text, column
 from sqlalchemy.sql import operators, and_, or_, not_
 
-from sqlagg.exceptions import ColumnNotFoundException, SqlAggException
+from sqlagg.exceptions import SqlAggException
 
 
 class NotEqMixin(object):
@@ -14,16 +14,9 @@ class NotEqMixin(object):
         return not self.__eq__(other)
 
 
-def get_column(table, column_name):
-    for column in table.c:
-        if column.name == column_name:
-            return column
-    raise ColumnNotFoundException('column with name "%s" not found' % column_name)
-
-
 @total_ordering
 class SqlFilter(NotEqMixin):
-    def build_expression(self, table):
+    def build_expression(self):
         raise NotImplementedError()
 
     def __lt__(self, other):
@@ -35,7 +28,7 @@ class RawFilter(SqlFilter):
     def __init__(self, expression):
         self.expression = expression
 
-    def build_expression(self, table):
+    def build_expression(self):
         return text(self.expression)
 
     def __eq__(self, other):
@@ -58,11 +51,11 @@ class BasicFilter(SqlFilter):
         if operator:
             self.operator = operator
 
-    def build_expression(self, table):
+    def build_expression(self):
         if not self.operator:
             raise SqlAggException('Operator missing')
 
-        return self.operator(get_column(table, self.column_name), bindparam(self.parameter))
+        return self.operator(column(self.column_name), bindparam(self.parameter))
 
     def __eq__(self, other):
         return (
@@ -85,8 +78,8 @@ class BetweenFilter(SqlFilter):
         self.lower_param = lower_param
         self.upper_param = upper_param
 
-    def build_expression(self, table):
-        return get_column(table, self.column_name).between(
+    def build_expression(self):
+        return column(self.column_name).between(
             bindparam(self.lower_param), bindparam(self.upper_param)
         )
 
@@ -136,10 +129,10 @@ class INFilter(BasicFilter):
     This filter requires that the parameter value be a tuple.
     """
     operator_string = 'in'
-    def build_expression(self, table):
+    def build_expression(self):
         assert isinstance(self.parameter, collections.Iterable)
         return operators.in_op(
-            get_column(table, self.column_name),
+            column(self.column_name),
             tuple(bindparam(param) for param in self.parameter)
         )
 
@@ -159,8 +152,8 @@ class ISNULLFilter(SqlFilter):
     def __init__(self, column_name):
         self.column_name = column_name
 
-    def build_expression(self, table):
-        return get_column(table, self.column_name).is_(None)
+    def build_expression(self):
+        return column(self.column_name).is_(None)
 
     def __eq__(self, other):
         return isinstance(other, ISNULLFilter) and self.column_name == other.column_name
@@ -176,8 +169,8 @@ class NOTNULLFilter(SqlFilter):
     def __init__(self, column_name):
         self.column_name = column_name
 
-    def build_expression(self, table):
-        return get_column(table, self.column_name).isnot(None)
+    def build_expression(self):
+        return column(self.column_name).isnot(None)
 
     def __eq__(self, other):
         return isinstance(other, NOTNULLFilter) and self.column_name == other.column_name
@@ -193,8 +186,8 @@ class NOTFilter(SqlFilter):
     def __init__(self, filter):
         self.filter = filter
 
-    def build_expression(self, table):
-        return not_(self.filter.build_expression(table))
+    def build_expression(self):
+        return not_(self.filter.build_expression())
 
     def __eq__(self, other):
         return isinstance(other, NOTFilter) and self.filter == other.filter
@@ -211,8 +204,8 @@ class ANDFilter(SqlFilter):
         self.filters = filters
         assert len(self.filters) > 1
 
-    def build_expression(self, table):
-        return and_(*[f.build_expression(table) for f in self.filters])
+    def build_expression(self):
+        return and_(*[f.build_expression() for f in self.filters])
 
     def __eq__(self, other):
         return isinstance(other, ANDFilter) and set(self.filters) == set(other.filters)
@@ -232,8 +225,8 @@ class ORFilter(SqlFilter):
         self.filters = filters
         assert len(self.filters) > 1
 
-    def build_expression(self, table):
-        return or_(*[f.build_expression(table) for f in self.filters])
+    def build_expression(self):
+        return or_(*[f.build_expression() for f in self.filters])
 
     def __eq__(self, other):
         return isinstance(other, ORFilter) and set(self.filters) == set(other.filters)

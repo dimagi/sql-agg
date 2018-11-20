@@ -81,14 +81,6 @@ class TestSqlAggViews(BaseTest, TestCase):
         self._test_view(NonzeroSumColumn("indicator_c"), 1)
         self._test_view(NonzeroSumColumn("indicator_d"), 0)
 
-    def test_median(self):
-        self._test_view(MedianColumn("indicator_a"), 1.5)
-
-    def test_median_group(self):
-        data = self._get_view_data(MedianColumn("indicator_a", group_by=["user"]))
-        self.assertEqual(data["user1"]["indicator_a"], 2)
-        self.assertEqual(data["user2"]["indicator_a"], 1)
-
     def test_alias_column(self):
         vc = QueryContext("user_table")
         i_a = SumColumn("indicator_a")

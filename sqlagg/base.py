@@ -6,8 +6,9 @@ import collections
 from collections import OrderedDict
 
 import sqlalchemy
+from sqlalchemy import column, table
 
-from sqlagg.exceptions import TableNotFoundException, ColumnNotFoundException, SqlAggException, \
+from sqlagg.exceptions import ColumnNotFoundException, SqlAggException, \
     DuplicateColumnsException
 from sqlagg.filters import SqlFilter
 from six.moves import zip
@@ -18,7 +19,7 @@ class SqlColumn(object):
     def label(self):
         raise NotImplementedError()
 
-    def build_column(self, sql_table):
+    def build_column(self):
         raise NotImplementedError()
 
 
@@ -35,8 +36,8 @@ class SimpleSqlColumn(SqlColumn):
     def label(self):
         return self.alias or self.column_name
 
-    def build_column(self, selectable):
-        table_column = selectable.c[self.column_name]
+    def build_column(self):
+        table_column = column(self.column_name)
         sql_col = self.aggregate_fn(table_column) if self.aggregate_fn else table_column
         return sql_col.label(self.label)
 
@@ -54,10 +55,10 @@ class QueryMeta(object):
     def append_column(self, view):
         pass
 
-    def execute(self, metadata, connection, filter_values):
+    def execute(self, connection, filter_values):
         raise NotImplementedError()
 
-    def get_query_string(self, metadata, connection):
+    def get_query_string(self, connection):
         raise NotImplementedError
 
 
@@ -94,52 +95,47 @@ class SimpleQueryMeta(QueryMeta):
                 'Use aliases to disambiguate them.'.format(', '.join(duplicates))
             )
 
-    def execute(self, metadata, connection, filter_values):
-        query = self._build_query(metadata)
+    def execute(self, connection, filter_values):
+        query = self._build_query()
         return connection.execute(query, **filter_values).fetchall()
 
-    def get_query_string(self, metadata, connection):
-        query = self._build_query(metadata)
+    def get_query_string(self, connection):
+        query = self._build_query()
         return str(query.compile(connection))
 
-    def count(self, metadata, connection, filter_values):
+    def count(self, connection, filter_values):
         assert self.start is None
         assert self.limit is None
         self._check()
-        query = self._build_query_generic(metadata, self.columns, group_by=self.group_by, filters=self.filters)
+        query = self._build_query_generic(self.columns, group_by=self.group_by, filters=self.filters)
         query = query.alias().count()
         return connection.execute(query, **filter_values).fetchall()[0][0]
 
-    def totals(self, metadata, connection, filter_values, total_columns):
+    def totals(self, connection, filter_values, total_columns):
         assert self.start is None
         assert self.limit is None
         self._check()
 
-        subquery = self._build_query_generic(metadata, self.columns, self.group_by, self.filters).alias()
+        subquery = self._build_query_generic(self.columns, self.group_by, self.filters).alias()
         query = sqlalchemy.select().select_from(subquery)
 
         for total_column in total_columns:
             column = SimpleSqlColumn(total_column, sqlalchemy.func.sum)
-            query.append_column(column.build_column(subquery))
+            query.append_column(column.build_column())
 
         return dict(zip(
             total_columns,
             connection.execute(query, **filter_values).fetchall()[0]
         ))
 
-    def _build_query(self, metadata):
+    def _build_query(self):
         self._check()
         return self._build_query_generic(
-            metadata, self.columns, self.group_by,
+            self.columns, self.group_by,
             self.filters, self.order_by, self.start, self.limit
         )
 
-    def _build_query_generic(self, metadata, columns, group_by=None, filters=None, order_by=None, start=None, limit=None):
-        try:
-            table = metadata.tables[self.table_name]
-        except KeyError:
-            raise TableNotFoundException("Unable to query table, table not found: %s" % self.table_name)
-
+    def _build_query_generic(self, columns, group_by=None, filters=None, order_by=None, start=None, limit=None):
         try:
             query = sqlalchemy.select()
             if group_by:
@@ -147,25 +143,25 @@ class SimpleQueryMeta(QueryMeta):
                 alias = [c.alias for c in columns]
                 for group_key in group_by:
                     if group_key in cols:
-                        query.append_group_by(table.c[group_key])
+                        query.append_group_by(column(group_key))
                     elif group_key in alias:
-                        aliased_columns = [col.build_column(table) for col in columns if col.alias == group_key]
+                        aliased_columns = [col.build_column() for col in columns if col.alias == group_key]
                         assert len(aliased_columns) == 1, "Only one column should have this alias"
                         query.append_group_by(aliased_columns[0])
                     else:
                         raise SqlAggException("Group by column not present in query columns or aliases")
 
             for c in columns:
-                query.append_column(c.build_column(table))
+                query.append_column(c.build_column())
         except KeyError as e:
             raise ColumnNotFoundException("Missing column in table (%s): %s" % (self.table_name, e))
 
         if filters:
             for filter in filters:
-                query.append_whereclause(filter.build_expression(table))
+                query.append_whereclause(filter.build_expression())
 
         if not query.froms:
-            query = query.select_from(table)
+            query = query.select_from(table(self.table_name))
 
         if order_by:
             for order_by_column in order_by:
@@ -222,27 +218,12 @@ class QueryContext(object):
                 start=self.start, limit=self.limit
             )
 
-    @property
-    def metadata(self):
-        if not hasattr(self, '_metadata'):
-            self._metadata = sqlalchemy.MetaData()
-            self._metadata.bind = self.connection
-
-            tables = [qm.table_name for qm in self.query_meta.values()]
-
-            def table_filter(table_name, metadata):
-                return table_name in tables
-
-            self._metadata.reflect(views=True, only=table_filter)
-
-        return self._metadata
-
     def count(self, connection, filter_values=None):
         self.connection = connection
         query_meta_values = list(self.query_meta.values())
         if query_meta_values:
             return query_meta_values[0].count(
-                self.metadata, connection, filter_values or {}
+                connection, filter_values or {}
             )
         return 0
 
@@ -251,7 +232,7 @@ class QueryContext(object):
         query_meta_values = list(self.query_meta.values())
         if query_meta_values:
             return query_meta_values[0].totals(
-                self.metadata, connection, filter_values or {}, total_columns
+                connection, filter_values or {}, total_columns
             )
         return {column: None for column in total_columns}
 
@@ -277,7 +258,7 @@ class QueryContext(object):
 
         data = OrderedDict()
         for qm in self.query_meta.values():
-            result = qm.execute(self.metadata, self.connection, filter_values or {})
+            result = qm.execute(self.connection, filter_values or {})
 
             for r in result:
                 if not qm.group_by:
@@ -302,7 +283,7 @@ class QueryContext(object):
         """Useful for debugging large queryies"""
         self.connection = connection
         return [
-            qm.get_query_string(self.metadata, connection)
+            qm.get_query_string(connection)
             for qm in self.query_meta.values()
         ]
 

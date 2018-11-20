@@ -1,1 +1,0 @@
-from .median import MedianQueryMeta
