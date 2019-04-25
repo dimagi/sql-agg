@@ -1,6 +1,8 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
+
 from sqlalchemy import desc, asc
+from sqlalchemy.sql import column
 
 
 class OrderBy(object):
@@ -8,10 +10,14 @@ class OrderBy(object):
         self.column_name = column_name
         self.is_ascending = is_ascending
 
+    @property
+    def column(self):
+        return column(self.column_name)
+
     def build_expression(self):
         if self.is_ascending:
-            return asc(self.column_name)
-        return desc(self.column_name)
+            return asc(self.column)
+        return desc(self.column)
 
     def __str__(self):
         return (

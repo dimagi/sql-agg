@@ -274,6 +274,28 @@ class TestSqlAgg(BaseTest, TestCase):
         with self.assertRaises(DuplicateColumnsException):
             vc.resolve(self.session.connection())
 
+    def test_order_by_non_existant_column(self):
+        vc = QueryContext(
+            "user_table",
+            group_by=["user"],
+            order_by=[OrderBy('lol')],
+        )
+        vc.append_column(SumColumn("indicator_a"))
+
+        with self.assertRaises(ProgrammingError):
+            vc.resolve(self.session.connection())
+
+    def test_order_by_sql_injextion(self):
+        vc = QueryContext(
+            "user_table",
+            group_by=["region"],
+            order_by=[OrderBy('user; DROP TABLE user_table CASCADE; SELECT * FROM region_table ORDER BY region')],
+        )
+        vc.append_column(SumColumn("indicator_a"))
+
+        with self.assertRaises(ProgrammingError):
+            vc.resolve(self.session.connection())
+
     def _get_user_data(self, filter_values, filters):
         vc = QueryContext("user_table", filters=filters, group_by=["user"])
         user = SimpleColumn("user")
