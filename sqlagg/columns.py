@@ -115,11 +115,18 @@ class ConditionalColumn(SqlColumn):
         else:
             whens = []
             for item in self.whens:
-                when, then = item
-                if isinstance(then, six.string_types):
-                    whens.append((text(when), text(then)))
-                else:
-                    whens.append((text(when), then))
+                when = item[0]
+                params = item[1:-1]
+                then = item[-1]
+
+                when = text(when)
+                # TODO: add test
+                if params:
+                    params = {"p{}".format(index): p for index, p in enumerate(params)}
+                    when = when.bindparams(**params)
+                then = text(then) if isinstance(then, six.string_types) else then
+
+                whens.append((when, then))
 
             expr = case(whens=whens, else_=self.else_)
 
