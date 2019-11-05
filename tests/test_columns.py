@@ -109,30 +109,30 @@ class TestSqlAggViews(BaseTest, TestCase):
 
     def test_conditional_column_simple(self):
         # sum(case user when 'user1' then 1 when 'user2' then 3 else 0)
-        col = SumWhen('user', whens={'user1': 1, 'user2': 3}, else_=0)
+        col = SumWhen('user', whens=[['user1', 1], ['user2', 3]], else_=0)
         self._test_view(col, 8)
 
     def test_conditional_column_complex(self):
         # sum(case when indicator_a < 1 OR indicator_a > 2 then 1 else 0)
-        col = SumWhen(whens={'user_table.indicator_a < 1 OR user_table.indicator_a > 2': 1}, alias='a')
+        col = SumWhen(whens=[['user_table.indicator_a < 1 OR user_table.indicator_a > 2', 1]], alias='a')
         self._test_view(col, 2)
 
         # sum(case when indicator_a between 1 and 2 then 0 else 1)
-        col = SumWhen(whens={'user_table.indicator_a between 1 and 2': 0}, else_=1, alias='a')
+        col = SumWhen(whens=[['user_table.indicator_a between 1 and 2', 0]], else_=1, alias='a')
         self._test_view(col, 2)
 
     def test_conditional_column_multi(self):
         # sum(case user when 'user1' then indicator_a else 0)
-        col = SumWhen(whens={"user_table.user = 'user1'": 'indicator_a'}, else_=0, alias='a')
+        col = SumWhen(whens=[["user_table.user = 'user1'", 'indicator_a']], else_=0, alias='a')
         self._test_view(col, 4)
 
     def test_group_by_conditional(self):
         from sqlalchemy import func
         vc = QueryContext("user_table", group_by=['bucket'])
-        vc.append_column(ConditionalAggregation(whens={
-            "indicator_a between 0 and 1": "'0-1'",
-            "indicator_a between 2 and 2": "'2'",
-        }, else_='3+', alias='bucket'))
+        vc.append_column(ConditionalAggregation(whens=[
+            ["indicator_a between 0 and 1", "'0-1'"],
+            ["indicator_a between 2 and 2", "'2'"],
+        ], else_='3+', alias='bucket'))
         vc.append_column(CountColumn('user'))
         result = vc.resolve(self.session.connection())
         self.assertEquals(result, {

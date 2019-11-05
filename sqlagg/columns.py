@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
-from collections import OrderedDict
 from sqlalchemy import func, distinct, case, text, cast, Integer, column
 from .base import BaseColumn, CustomQueryColumn, SqlColumn
 import six
@@ -74,9 +73,7 @@ class CountUniqueColumn(BaseColumn):
 class ConditionalAggregation(BaseColumn):
     def __init__(self, key=None, whens=None, else_=None, *args, **kwargs):
         super(ConditionalAggregation, self).__init__(key, *args, **kwargs)
-        # This appears in both the SELECT block and the GROUP BY block
-        # Until that changes, it must appear in a deterministic order
-        self.whens = OrderedDict(sorted((whens or {}).items()))
+        self.whens = whens or []
         self.else_ = else_
 
         assert self.key or self.alias, "Column must have either a key or an alias"
@@ -88,7 +85,7 @@ class ConditionalAggregation(BaseColumn):
 
 class SumWhen(ConditionalAggregation):
     """
-    SumWhen("vehicle", whens={"unicycle": 1, "bicycle": 2, "car": 4}, else_=0, alias="num_wheels")
+    SumWhen("vehicle", whens=["unicycle", 1], ["bicycle", 2], ["car", 4], else_=0, alias="num_wheels")
     """
     aggregate_fn = func.sum
 
@@ -96,7 +93,7 @@ class SumWhen(ConditionalAggregation):
 class ConditionalColumn(SqlColumn):
     """
     ConditionalColumn("vehicle",
-                      whens={"unicycle": 1, "bicycle": 2, "car": 4},
+                      whens=[["unicycle", 1], ["bicycle": 2], ["car": 4]],
                       else_=0,
                       aggregation_fn=func.sum,
                       alias="num_wheels")
@@ -117,7 +114,8 @@ class ConditionalColumn(SqlColumn):
             expr = case(value=column(self.column_name), whens=self.whens, else_=self.else_)
         else:
             whens = []
-            for when, then in self.whens.items():
+            for item in self.whens:
+                when, then = item
                 if isinstance(then, six.string_types):
                     whens.append((text(when), text(then)))
                 else:
