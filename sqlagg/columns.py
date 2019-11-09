@@ -97,6 +97,7 @@ class ConditionalColumn(SqlColumn):
                       else_=0,
                       aggregation_fn=func.sum,
                       alias="num_wheels")
+    TODO: or pass dicts
     """
     def __init__(self, column_name, whens, else_, aggregate_fn, alias):
         self.aggregate_fn = aggregate_fn
@@ -115,15 +116,16 @@ class ConditionalColumn(SqlColumn):
         else:
             whens = []
             for item in self.whens:
-                when = item[0]
-                params = item[1:-1]
-                then = item[-1]
+                if type(item) == list:
+                    when = item[0]
+                    then = item[-1]
+                    params = {}
+                else:
+                    when = item['when']
+                    then = item['then']
+                    params = item['params']
 
-                when = text(when)
-                # TODO: add test
-                if params:
-                    params = {"p{}".format(index): p for index, p in enumerate(params)}
-                    when = when.bindparams(**params)
+                when = text(when).bindparams(**params)
                 then = text(then) if isinstance(then, six.string_types) else then
 
                 whens.append((when, then))
