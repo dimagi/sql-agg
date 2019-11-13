@@ -144,10 +144,20 @@ class ConditionalColumn(SqlColumn):
         whens = []
         for item in self.whens:
             when, *binds, then = item
-            when = text(when)
             if binds:
-                binds = {"p{}".format(uuid.uuid4().hex): p for p in enumerate(binds)}
-                when = when.bindparams(**binds)
+                binds = list(reversed(binds))
+                named_binds = {}
+                when_with_named_binds = ''
+                for letter in when:
+                    if letter != '?':
+                        when_with_named_binds += letter
+                    else:
+                        bind_name = 'p' + uuid.uuid4().hex
+                        when_with_named_binds += ':' + bind_name
+                        named_binds[bind_name] = binds.pop()
+                when = text(when_with_named_binds).bindparams(**named_binds)
+            else:
+                when = text(when)
             then = text(then) if isinstance(then, six.string_types) else then
             whens.append((when, then))
         return whens
