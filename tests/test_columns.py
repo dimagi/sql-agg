@@ -122,10 +122,7 @@ class TestSqlAggViews(BaseTest, TestCase):
         self._test_view(col, 2)
 
         # with binds: sum(case when indicator_a between 1 and 2 then 0 else 1)
-        col = SumWhenWithBinds(whens=[['user_table.indicator_a between :lower and :upper', 0]],
-                               binds={'lower': 1, 'upper': 2},
-                               else_=1,
-                               alias='a')
+        col = SumWhen(whens=[['user_table.indicator_a between ? and ?', 1, 2, 0]], else_=1, alias='a')
         self._test_view(col, 2)
 
     def test_conditional_column_multi(self):

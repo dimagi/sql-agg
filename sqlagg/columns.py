@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 from sqlalchemy import func, distinct, case, text, cast, Integer, column
 from .base import BaseColumn, CustomQueryColumn, SqlColumn
 import six
+import uuid
 
 
 class SimpleColumn(BaseColumn):
@@ -85,40 +86,38 @@ class ConditionalAggregation(BaseColumn):
 
 class SumWhen(ConditionalAggregation):
     """
+    Without binds:
     SumWhen("vehicle", whens=[["unicycle", 1], ["bicycle", 2], ["car", 4]], else_=0, alias="num_wheels")
+
+    With binds:
+    SumWhen("age_cohort",
+            whens=[
+                ["age_in_months < ?", 6, 1],
+                ["age_in_months < ?", 12, 2],
+            ],
+            else_=0,
+            alias="half_years")
     """
     aggregate_fn = func.sum
 
 
-class SumWhenWithBinds(SumWhen):
-    """
-    SumWhen("age_cohort",
-            whens=[
-                ["when": "age < :ten", "then": 1],
-                ["when": "age < :thirty", "then": 2],
-            binds={
-                "ten": 10,
-                "thirty": 30,
-            },
-            else_=0)
-    """
-    def __init__(self, key=None, whens=None, binds=None, else_=None, *args, **kwargs):
-        super(SumWhenWithBinds, self).__init__(key, whens, else_, *args, **kwargs)
-        self.binds = binds or {}
-
-    @property
-    def sql_column(self):
-        return ConditionalTemplateColumn(self.key, self.whens, self.binds, self.else_,
-                                         self.aggregate_fn, self.alias)
-
-
 class ConditionalColumn(SqlColumn):
     """
+    Without binds:
     ConditionalColumn("vehicle",
                       whens=[["unicycle", 1], ["bicycle": 2], ["car": 4]],
                       else_=0,
                       aggregation_fn=func.sum,
                       alias="num_wheels")
+
+    Or with binds:
+    ConditionalColumn("age_cohort",
+                      whens=[
+                        ["age_in_months < ?", 6, 1],
+                        ["age_in_months < ?", 12, 2],
+                      ],
+                      else_=0,
+                      aggregation_fn=func.sum)
     """
     def __init__(self, column_name, whens, else_, aggregate_fn, alias):
         self.aggregate_fn = aggregate_fn
@@ -144,37 +143,11 @@ class ConditionalColumn(SqlColumn):
     def _build_whens(self):
         whens = []
         for item in self.whens:
-            when, then = item
+            when, *binds, then = item
             when = text(when)
-            then = text(then) if isinstance(then, six.string_types) else then
-            whens.append((when, then))
-        return whens
-
-
-class ConditionalTemplateColumn(ConditionalColumn):
-    """
-    ConditionalTemplateColumn("age_cohort",
-                              whens=[
-                                ["when": "age < :ten", "then": 1],
-                                ["when": "age < :thirty", "then": 2],
-                              ],
-                              binds={
-                                "ten": 10,
-                                "thirty": 30,
-                              },
-                              else_=0,
-                              aggregation_fn=func.sum)
-    """
-    def __init__(self, column_name, whens, binds, else_, aggregate_fn, alias):
-        super(ConditionalTemplateColumn, self).__init__(column_name, whens, else_, aggregate_fn, alias)
-        self.binds = binds or {}
-
-    def _build_whens(self):
-        whens = []
-        for item in self.whens:
-            when, then = item
-            params = {key: value for key, value in self.binds.items() if ':' + key in when}
-            when = text(when).bindparams(**params)
+            if binds:
+                binds = {"p{}".format(uuid.uuid4().hex): p for p in enumerate(binds)}
+                when = when.bindparams(**binds)
             then = text(then) if isinstance(then, six.string_types) else then
             whens.append((when, then))
         return whens
