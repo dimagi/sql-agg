@@ -1,6 +1,10 @@
 History
 =========
 
+0.14.0 (2019-11-13)
+----------------
+* Added support for binds to SumWhen and ConditionalColumn (#60). Both of these classes noow expect `whens` to be a list of lists rather than a dict.
+
 0.13.0 (2019-04-25)
 ----------------
 * Removed SQL injection in OrderBy class (#57)
