@@ -1,6 +1,8 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 from sqlalchemy import func, distinct, case, text, cast, Integer, column
+
+from sqlagg import SqlAggException
 from .base import BaseColumn, CustomQueryColumn, SqlColumn
 import six
 import uuid
@@ -161,3 +163,40 @@ class ConditionalColumn(SqlColumn):
             then = text(then) if isinstance(then, six.string_types) else then
             whens.append((when, then))
         return whens
+
+
+
+class LastValueAggregation(BaseColumn):
+    aggregate_fn = func.last_value
+
+    def __init__(self, key=None, partition_by=None, order_by=None, *args, **kwargs):
+        super(LastValueAggregation, self).__init__(key, *args, **kwargs)
+        self.partition_by = partition_by
+        self.order_by = order_by
+
+        assert self.key or self.alias, "Column must have either a key or an alias"
+
+    @property
+    def sql_column(self):
+        return LastValueColumn(self.key, self.partition_by, self.order_by, self.alias)
+
+
+class LastValueColumn(SqlColumn):
+    def __init__(self, column_name, partition_by, order_by, alias=None):
+        self.column_name = column_name
+        self.partition_by = partition_by
+        self.order_by = order_by
+        self.alias = alias
+
+    @property
+    def label(self):
+        return self.alias or self.column_name
+
+    def build_column(self):
+        if not (self.partition_by and self.order_by):
+            raise SqlAggException("Insufficient parameters for last value")
+        table_column = column(self.column_name)
+        partition_by_column = column(self.partition_by)
+        order_by_column = column(self.order_by)
+        return func.last_value(table_column).over(
+            partition_by=partition_by_column, order_by=order_by_column).label(self.label)
