@@ -8,7 +8,7 @@ from sqlalchemy.orm import sessionmaker
 
 from sqlagg import *
 from sqlagg.columns import MonthColumn, DayColumn, YearColumn, WeekColumn, CountUniqueColumn, DayOfWeekColumn, \
-    DayOfYearColumn, YearQuarterColumn, NonzeroSumColumn, ConditionalAggregation
+    DayOfYearColumn, YearQuarterColumn, NonzeroSumColumn, ConditionalAggregation, LastValueAggregation
 
 Session = sessionmaker()
 
@@ -144,6 +144,13 @@ class TestSqlAggViews(BaseTest, TestCase):
             '2': {'bucket': '2', 'user': 1},
             '3+': {'bucket': '3+', 'user': 1},
         })
+
+    def test_last_value(self):
+        vc = QueryContext("user_table", group_by=['user'])
+        vc.append_column(
+            LastValueAggregation('indicator_a', 'user', 'date', 'last_indicator_a_for_user_in_month'))
+        result = vc.resolve(self.session.connection())
+        self.assertEquals(result, {1.0: {'month': 1.0}, 2.0: {'month': 2.0}, 3.0: {'month': 3.0}})
 
     def test_month(self):
         vc = QueryContext("user_table", group_by=['month'])
