@@ -85,7 +85,7 @@ class ConditionalAggregation(BaseColumn):
         return ConditionalColumn(self.key, self.whens, self.else_, self.aggregate_fn, self.alias)
 
 
-class ArrayAggLastValueAggregationColumn(BaseColumn):
+class ArrayAggLastValueColumn(BaseColumn):
     """
     Pick the last value from array aggregation
     Pass order_by_col to sort by another column within the group, for picking last value reliably
@@ -97,15 +97,15 @@ class ArrayAggLastValueAggregationColumn(BaseColumn):
     aggregate_fn = func.array_agg
 
     def __init__(self, key, order_by_col=None, *args, **kwargs):
-        super(ArrayAggLastValueAggregationColumn, self).__init__(key, *args, **kwargs)
+        super(ArrayAggLastValueColumn, self).__init__(key, *args, **kwargs)
         self.order_by_col = order_by_col
 
     @property
     def sql_column(self):
-        return ArrayAggLastValueColumn(self.key, self.order_by_col, self.alias)
+        return ArrayAggColumn(self.key, self.order_by_col, self.alias)
 
     def get_value(self, row):
-        value = super(ArrayAggLastValueAggregationColumn, self).get_value(row)
+        value = super(ArrayAggLastValueColumn, self).get_value(row)
         return value[-1] if value else value
 
 
@@ -188,7 +188,7 @@ class ConditionalColumn(SqlColumn):
         return whens
 
 
-class ArrayAggLastValueColumn(SqlColumn):
+class ArrayAggColumn(SqlColumn):
     def __init__(self, column_name, order_by_col, alias=None):
         self.column_name = column_name
         self.order_by_col = order_by_col

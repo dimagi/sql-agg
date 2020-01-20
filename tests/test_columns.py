@@ -10,7 +10,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlagg import *
 from sqlagg.columns import MonthColumn, DayColumn, YearColumn, WeekColumn, CountUniqueColumn, DayOfWeekColumn, \
     DayOfYearColumn, YearQuarterColumn, NonzeroSumColumn, ConditionalAggregation, \
-    ArrayAggLastValueAggregationColumn
+    ArrayAggLastValueColumn
 
 Session = sessionmaker()
 
@@ -150,7 +150,7 @@ class TestSqlAggViews(BaseTest, TestCase):
     def test_array_agg_last_value(self):
         vc = QueryContext("region_table", group_by=['region', 'sub_region'])
         vc.append_column(AliasColumn('region'))
-        last_value_column = ArrayAggLastValueAggregationColumn('indicator_a', 'date')
+        last_value_column = ArrayAggLastValueColumn('indicator_a', 'date')
         vc.append_column(last_value_column)
         result = vc.resolve(self.session.connection())
         self.assertEquals(result, {
