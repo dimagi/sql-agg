@@ -94,8 +94,6 @@ class ArrayAggLastValueColumn(BaseColumn):
     Select ARRAY_AGG(col1 ORDER BY col2), col3 ..
     """
 
-    aggregate_fn = func.array_agg
-
     def __init__(self, key, order_by_col=None, *args, **kwargs):
         super(ArrayAggLastValueColumn, self).__init__(key, *args, **kwargs)
         self.order_by_col = order_by_col
