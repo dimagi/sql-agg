@@ -85,17 +85,16 @@ class ConditionalAggregation(BaseColumn):
         return ConditionalColumn(self.key, self.whens, self.else_, self.aggregate_fn, self.alias)
 
 
-class ArrayAggLastValueColumn(BaseColumn):
+class ArrayAggColumn(BaseColumn):
     """
-    Pick the last value from array aggregation
-    Pass order_by_col to sort by another column within the group, for picking last value reliably
-    Example: Last value picked in array generated for a column col1, ordered by col2 with select clause
-    like
+    Perform array aggregation on a column
+    Pass order_by_col to sort by another column within the group
+    Example: array generated for a column col1, ordered by col2 with select clause like
     Select ARRAY_AGG(col1 ORDER BY col2), col3 ..
     """
 
     def __init__(self, key, order_by_col=None, *args, **kwargs):
-        super(ArrayAggLastValueColumn, self).__init__(key, *args, **kwargs)
+        super(ArrayAggColumn, self).__init__(key, *args, **kwargs)
         self.order_by_col = order_by_col
 
     @property
@@ -182,7 +181,7 @@ class ConditionalColumn(SqlColumn):
         return whens
 
 
-class ArrayAggColumn(SqlColumn):
+class ArrayAggSQLColumn(SqlColumn):
     def __init__(self, column_name, order_by_col, alias=None):
         self.column_name = column_name
         self.order_by_col = order_by_col
