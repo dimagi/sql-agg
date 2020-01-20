@@ -158,10 +158,6 @@ class TestSqlAggViews(BaseTest, TestCase):
             (u'region1', u'region1_b'): {'indicator_a': [3, 1], 'region': 'region1', 'sub_region': 'region1_b'},
             (u'region2', u'region2_a'): {'indicator_a': [2], 'region': 'region2', 'sub_region': 'region2_a'},
         })
-        result_rows = list(result.values())
-        self.assertEqual(last_value_column.get_value(result_rows[0]), 0)
-        self.assertEqual(last_value_column.get_value(result_rows[1]), 1)
-        self.assertEqual(last_value_column.get_value(result_rows[2]), 2)
 
     def test_month(self):
         vc = QueryContext("user_table", group_by=['month'])

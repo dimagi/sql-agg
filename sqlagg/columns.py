@@ -100,11 +100,7 @@ class ArrayAggLastValueColumn(BaseColumn):
 
     @property
     def sql_column(self):
-        return ArrayAggColumn(self.key, self.order_by_col, self.alias)
-
-    def get_value(self, row):
-        value = super(ArrayAggLastValueColumn, self).get_value(row)
-        return value[-1] if value else value
+        return ArrayAggSQLColumn(self.key, self.order_by_col, self.alias)
 
 
 class SumWhen(ConditionalAggregation):
