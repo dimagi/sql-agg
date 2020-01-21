@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 from sqlalchemy import func, distinct, case, text, cast, Integer, column
+from sqlalchemy.dialects.postgresql import aggregate_order_by
 from .base import BaseColumn, CustomQueryColumn, SqlColumn
 import six
 import uuid
@@ -84,6 +85,23 @@ class ConditionalAggregation(BaseColumn):
         return ConditionalColumn(self.key, self.whens, self.else_, self.aggregate_fn, self.alias)
 
 
+class ArrayAggColumn(BaseColumn):
+    """
+    Perform array aggregation on a column
+    Pass order_by_col to sort by another column within the group
+    Example: array generated for a column col1, ordered by col2 with select clause like
+    Select ARRAY_AGG(col1 ORDER BY col2), col3 ..
+    """
+
+    def __init__(self, key, order_by_col=None, *args, **kwargs):
+        super(ArrayAggColumn, self).__init__(key, *args, **kwargs)
+        self.order_by_col = order_by_col
+
+    @property
+    def sql_column(self):
+        return ArrayAggSQLColumn(self.key, self.order_by_col, self.alias)
+
+
 class SumWhen(ConditionalAggregation):
     """
     Without binds:
@@ -161,3 +179,19 @@ class ConditionalColumn(SqlColumn):
             then = text(then) if isinstance(then, six.string_types) else then
             whens.append((when, then))
         return whens
+
+
+class ArrayAggSQLColumn(SqlColumn):
+    def __init__(self, column_name, order_by_col, alias=None):
+        self.column_name = column_name
+        self.order_by_col = order_by_col
+        self.alias = alias
+
+    @property
+    def label(self):
+        return self.alias or self.column_name
+
+    def build_column(self):
+        table_column = column(self.column_name)
+        order_by_column = column(self.order_by_col)
+        return func.array_agg(aggregate_order_by(table_column, order_by_column.asc())).label(self.label)
