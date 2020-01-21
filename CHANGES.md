@@ -1,7 +1,7 @@
 History
 =========
 
-0.14.0 (2020-01-21)
+0.15.0 (2020-01-21)
 ----------------
 * Added support for array aggregation (#63)
 
