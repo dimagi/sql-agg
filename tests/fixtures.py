@@ -39,7 +39,7 @@ class RegionData(DataSet):
     class r1:
         region = "region1"
         sub_region = "region1_a"
-        date = datetime.date(2013, 1, 1)
+        date = datetime.date(2013, 3, 1)
         indicator_a = 1
         indicator_b = 0
 

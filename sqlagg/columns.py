@@ -193,5 +193,7 @@ class ArrayAggSQLColumn(SqlColumn):
 
     def build_column(self):
         table_column = column(self.column_name)
-        order_by_column = column(self.order_by_col)
-        return func.array_agg(aggregate_order_by(table_column, order_by_column.asc())).label(self.label)
+        if self.order_by_col:
+            order_by_column = column(self.order_by_col)
+            return func.array_agg(aggregate_order_by(table_column, order_by_column.asc())).label(self.label)
+        return func.array_agg(table_column).label(self.label)
