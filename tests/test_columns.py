@@ -147,10 +147,22 @@ class TestSqlAggViews(BaseTest, TestCase):
             '3+': {'bucket': '3+', 'user': 1},
         })
 
-    def test_array_agg(self):
+    def test_array_agg_with_order(self):
         vc = QueryContext("region_table", group_by=['region', 'sub_region'])
         vc.append_column(AliasColumn('region'))
         array_agg_column = ArrayAggColumn('indicator_a', 'date')
+        vc.append_column(array_agg_column)
+        result = vc.resolve(self.session.connection())
+        self.assertEquals(result, {
+            (u'region1', u'region1_a'): {'indicator_a': [0, 1], 'region': 'region1', 'sub_region': 'region1_a'},
+            (u'region1', u'region1_b'): {'indicator_a': [3, 1], 'region': 'region1', 'sub_region': 'region1_b'},
+            (u'region2', u'region2_a'): {'indicator_a': [2], 'region': 'region2', 'sub_region': 'region2_a'},
+        })
+
+    def test_array_agg_without_order(self):
+        vc = QueryContext("region_table", group_by=['region', 'sub_region'])
+        vc.append_column(AliasColumn('region'))
+        array_agg_column = ArrayAggColumn('indicator_a')
         vc.append_column(array_agg_column)
         result = vc.resolve(self.session.connection())
         self.assertEquals(result, {
