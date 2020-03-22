@@ -222,3 +222,14 @@ class TestSqlAggViews(BaseTest, TestCase):
         vc = QueryContext("user_table")
         vc.append_column(view)
         return vc.resolve(self.session.connection())
+
+    def test_distinct(self):
+        vc = QueryContext("user_table", group_by=['user'], distinct=['day', 'month'], order_by=[
+            OrderBy('date', is_ascending=False)
+        ])
+        vc.append_column(DayColumn('date', alias='day'))
+        vc.append_column(MonthColumn('date', alias='month'))
+        vc.append_column(SimpleSqlColumn('indicator_a'))
+        result = vc.resolve(self.session.connection())
+        self.assertEquals(result, {'user1': {'day': 1.0, 'month': 2.0, 'indicator_a': 3},
+                                   'user2': {'day': 1.0, 'month': 1.0, 'indicator_a': 0}})
