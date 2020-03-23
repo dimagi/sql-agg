@@ -192,3 +192,5 @@ Then run the following
 ```python
 python setup.py test
 ```
+
+Note: If you face issues with psycopg2 try replacing with `psycopg2-binary` in setup.py

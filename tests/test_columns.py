@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
+import datetime
 from unittest import TestCase
 
 from sqlagg.filters import EQ
@@ -10,7 +11,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlagg import *
 from sqlagg.columns import MonthColumn, DayColumn, YearColumn, WeekColumn, CountUniqueColumn, DayOfWeekColumn, \
     DayOfYearColumn, YearQuarterColumn, NonzeroSumColumn, ConditionalAggregation, \
-    ArrayAggColumn
+    ArrayAggColumn, SimpleColumn
 
 Session = sessionmaker()
 
@@ -222,3 +223,21 @@ class TestSqlAggViews(BaseTest, TestCase):
         vc = QueryContext("user_table")
         vc.append_column(view)
         return vc.resolve(self.session.connection())
+
+    def test_distinct(self):
+        vc = QueryContext(
+            "user_table",
+            distinct=['user', 'year'],
+            order_by=[OrderBy('user'), OrderBy('year'), OrderBy('date', is_ascending=False)],
+            group_by=['user', 'date']
+        )
+        vc.append_column(SimpleColumn('user'))
+        vc.append_column(YearColumn('date', alias='year'))
+        vc.append_column(SimpleColumn('indicator_a'))
+        result = vc.resolve(self.session.connection())
+        self.assertEquals(result, {
+            ('user1', datetime.date(2013, 2, 1)): {'user': 'user1', 'year': 2013.0, 'indicator_a': 3,
+                                                   'date': datetime.date(2013, 2, 1)},
+            ('user2', datetime.date(2013, 3, 1)): {'user': 'user2', 'year': 2013.0, 'indicator_a': 2,
+                                                   'date': datetime.date(2013, 3, 1)}
+        })

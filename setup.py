@@ -15,7 +15,7 @@ tests_require=[
 
 setup(
     name='sqlagg',
-    version='0.15.1',
+    version='0.16.0',
     description='SQL aggregation tool',
     author='Dimagi',
     author_email='dev@dimagi.com',

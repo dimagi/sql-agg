@@ -1,6 +1,10 @@
 History
 =========
 
+0.16.0 (2020-03-24)
+----------------
+* Added support for distinct on (#66)
+
 0.15.0 (2020-01-21)
 ----------------
 * Added support for array aggregation (#63)
