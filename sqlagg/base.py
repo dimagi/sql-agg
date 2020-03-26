@@ -223,7 +223,8 @@ class QueryContext(object):
 
     def _new_query_meta(self, column):
         if isinstance(column, QueryColumn):
-            return column.get_query_meta(self.table_name, self.filters, self.group_by, self.order_by)
+            return column.get_query_meta(self.table_name, self.filters, self.group_by, self.distinct_on,
+                                         self.order_by)
         else:
             table_name = column.table_name or self.table_name
             filters = column.filters or self.filters
@@ -321,19 +322,21 @@ class SqlAggColumn(object):
 
 
 class QueryColumn(SqlAggColumn):
-    def get_query_meta(self, table_name, filters, group_by, order_by):
+    def get_query_meta(self, table_name, filters, group_by, distinct_on, order_by):
         raise NotImplementedError()
 
 
 class BaseColumn(SqlAggColumn):
     aggregate_fn = None
 
-    def __init__(self, key, alias=None, table_name=None, filters=None, group_by=None, order_by=None):
+    def __init__(self, key, alias=None, table_name=None, filters=None, group_by=None, distinct_on=None,
+                 order_by=None):
         self.key = key
         self.alias = alias
         self.table_name = table_name
         self.filters = filters
         self.group_by = group_by
+        self.distinct_on = distinct_on
         self.order_by = order_by
 
         if self.filters:
@@ -366,12 +369,14 @@ class CustomQueryColumn(BaseColumn, QueryColumn):
     query_cls = None
     name = None
 
-    def get_query_meta(self, default_table_name, default_filters, default_group_by, default_order_by):
+    def get_query_meta(self, default_table_name, default_filters, default_group_by, default_distinct_on,
+                       default_order_by):
         table_name = self.table_name or default_table_name
         filters = self.filters or default_filters
         group_by = self.group_by or default_group_by
+        distinct_on = self.distinct_on or default_distinct_on
         order_by = self.order_by or default_order_by
-        return self.query_cls(table_name, filters, group_by, order_by)
+        return self.query_cls(table_name, filters, group_by, distinct_on, order_by)
 
     @property
     def column_key(self):
