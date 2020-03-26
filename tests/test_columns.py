@@ -224,10 +224,10 @@ class TestSqlAggViews(BaseTest, TestCase):
         vc.append_column(view)
         return vc.resolve(self.session.connection())
 
-    def test_distinct(self):
+    def test_distinct_on(self):
         vc = QueryContext(
             "user_table",
-            distinct=['user', 'year'],
+            distinct_on=['user', 'year'],
             order_by=[OrderBy('user'), OrderBy('year'), OrderBy('date', is_ascending=False)],
             group_by=['user', 'date']
         )
