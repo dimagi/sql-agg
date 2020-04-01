@@ -15,7 +15,7 @@ tests_require=[
 
 setup(
     name='sqlagg',
-    version='0.12.0',
+    version='0.16.1',
     description='SQL aggregation tool',
     author='Dimagi',
     author_email='dev@dimagi.com',
@@ -31,9 +31,8 @@ setup(
         'test': tests_require,
     },
     classifiers=[
-        "Programming Language :: Python :: 2.7",
-        "Programming Language :: Python :: 3.4",
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
     ]
 )

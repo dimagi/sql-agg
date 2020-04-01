@@ -1,14 +1,17 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
+import datetime
 from unittest import TestCase
 
 from sqlagg.filters import EQ
+from sqlagg.sorting import OrderBy
 from . import BaseTest, engine
 from sqlalchemy.orm import sessionmaker
 
 from sqlagg import *
 from sqlagg.columns import MonthColumn, DayColumn, YearColumn, WeekColumn, CountUniqueColumn, DayOfWeekColumn, \
-    DayOfYearColumn, YearQuarterColumn, NonzeroSumColumn, ConditionalAggregation
+    DayOfYearColumn, YearQuarterColumn, NonzeroSumColumn, ConditionalAggregation, \
+    ArrayAggColumn, SimpleColumn
 
 Session = sessionmaker()
 
@@ -111,36 +114,64 @@ class TestSqlAggViews(BaseTest, TestCase):
 
     def test_conditional_column_simple(self):
         # sum(case user when 'user1' then 1 when 'user2' then 3 else 0)
-        col = SumWhen('user', whens={'user1': 1, 'user2': 3}, else_=0)
+        col = SumWhen('user', whens=[['user1', 1], ['user2', 3]], else_=0)
         self._test_view(col, 8)
 
     def test_conditional_column_complex(self):
         # sum(case when indicator_a < 1 OR indicator_a > 2 then 1 else 0)
-        col = SumWhen(whens={'user_table.indicator_a < 1 OR user_table.indicator_a > 2': 1}, alias='a')
+        col = SumWhen(whens=[['user_table.indicator_a < 1 OR user_table.indicator_a > 2', 1]], alias='a')
         self._test_view(col, 2)
 
         # sum(case when indicator_a between 1 and 2 then 0 else 1)
-        col = SumWhen(whens={'user_table.indicator_a between 1 and 2': 0}, else_=1, alias='a')
+        col = SumWhen(whens=[['user_table.indicator_a between 1 and 2', 0]], else_=1, alias='a')
+        self._test_view(col, 2)
+
+        # with binds: sum(case when indicator_a between 1 and 2 then 0 else 1)
+        col = SumWhen(whens=[['user_table.indicator_a between ? and ?', 1, 2, 0]], else_=1, alias='a')
         self._test_view(col, 2)
 
     def test_conditional_column_multi(self):
         # sum(case user when 'user1' then indicator_a else 0)
-        col = SumWhen(whens={"user_table.user = 'user1'": 'indicator_a'}, else_=0, alias='a')
+        col = SumWhen(whens=[["user_table.user = 'user1'", 'indicator_a']], else_=0, alias='a')
         self._test_view(col, 4)
 
     def test_group_by_conditional(self):
         from sqlalchemy import func
         vc = QueryContext("user_table", group_by=['bucket'])
-        vc.append_column(ConditionalAggregation(whens={
-            "indicator_a between 0 and 1": "'0-1'",
-            "indicator_a between 2 and 2": "'2'",
-        }, else_='3+', alias='bucket'))
+        vc.append_column(ConditionalAggregation(whens=[
+            ["indicator_a between 0 and 1", "'0-1'"],
+            ["indicator_a between 2 and 2", "'2'"],
+        ], else_='3+', alias='bucket'))
         vc.append_column(CountColumn('user'))
         result = vc.resolve(self.session.connection())
         self.assertEquals(result, {
             '0-1': {'bucket': '0-1', 'user': 2},
             '2': {'bucket': '2', 'user': 1},
             '3+': {'bucket': '3+', 'user': 1},
+        })
+
+    def test_array_agg_with_order(self):
+        vc = QueryContext("region_table", group_by=['region', 'sub_region'])
+        vc.append_column(AliasColumn('region'))
+        array_agg_column = ArrayAggColumn('indicator_a', 'date')
+        vc.append_column(array_agg_column)
+        result = vc.resolve(self.session.connection())
+        self.assertEquals(result, {
+            (u'region1', u'region1_a'): {'indicator_a': [0, 1], 'region': 'region1', 'sub_region': 'region1_a'},
+            (u'region1', u'region1_b'): {'indicator_a': [3, 1], 'region': 'region1', 'sub_region': 'region1_b'},
+            (u'region2', u'region2_a'): {'indicator_a': [2], 'region': 'region2', 'sub_region': 'region2_a'},
+        })
+
+    def test_array_agg_without_order(self):
+        vc = QueryContext("region_table", group_by=['region', 'sub_region'])
+        vc.append_column(AliasColumn('region'))
+        array_agg_column = ArrayAggColumn('indicator_a')
+        vc.append_column(array_agg_column)
+        result = vc.resolve(self.session.connection())
+        self.assertEquals(result, {
+            (u'region1', u'region1_a'): {'indicator_a': [1, 0], 'region': 'region1', 'sub_region': 'region1_a'},
+            (u'region1', u'region1_b'): {'indicator_a': [3, 1], 'region': 'region1', 'sub_region': 'region1_b'},
+            (u'region2', u'region2_a'): {'indicator_a': [2], 'region': 'region2', 'sub_region': 'region2_a'},
         })
 
     def test_month(self):
@@ -195,3 +226,21 @@ class TestSqlAggViews(BaseTest, TestCase):
         vc = QueryContext("user_table")
         vc.append_column(view)
         return vc.resolve(self.session.connection())
+
+    def test_distinct_on(self):
+        vc = QueryContext(
+            "user_table",
+            distinct_on=['user', 'year'],
+            order_by=[OrderBy('user'), OrderBy('year'), OrderBy('date', is_ascending=False)],
+            group_by=['user', 'date']
+        )
+        vc.append_column(SimpleColumn('user'))
+        vc.append_column(YearColumn('date', alias='year'))
+        vc.append_column(SimpleColumn('indicator_a'))
+        result = vc.resolve(self.session.connection())
+        self.assertEquals(result, {
+            ('user1', datetime.date(2013, 2, 1)): {'user': 'user1', 'year': 2013.0, 'indicator_a': 3,
+                                                   'date': datetime.date(2013, 2, 1)},
+            ('user2', datetime.date(2013, 3, 1)): {'user': 'user2', 'year': 2013.0, 'indicator_a': 2,
+                                                   'date': datetime.date(2013, 3, 1)}
+        })

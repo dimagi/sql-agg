@@ -46,9 +46,10 @@ class SimpleSqlColumn(SqlColumn):
 
 
 class QueryMeta(object):
-    def __init__(self, table_name, filters, group_by, order_by):
+    def __init__(self, table_name, filters, group_by, distinct_on, order_by):
         self.filters = filters
         self.group_by = group_by
+        self.distinct_on = distinct_on
         self.order_by = order_by
         self.table_name = table_name
 
@@ -66,8 +67,8 @@ class SimpleQueryMeta(QueryMeta):
     """
     Metadata about a query including the table being queried, list of columns, filters and group by columns.
     """
-    def __init__(self, table_name, filters, group_by, order_by, start=None, limit=None):
-        super(SimpleQueryMeta, self).__init__(table_name, filters, group_by, order_by)
+    def __init__(self, table_name, filters, group_by, distinct_on, order_by, start=None, limit=None):
+        super(SimpleQueryMeta, self).__init__(table_name, filters, group_by, distinct_on, order_by)
         self.start = start
         self.limit = limit
         self.columns = []
@@ -107,7 +108,8 @@ class SimpleQueryMeta(QueryMeta):
         assert self.start is None
         assert self.limit is None
         self._check()
-        query = self._build_query_generic(self.columns, group_by=self.group_by, filters=self.filters)
+        query = self._build_query_generic(self.columns, group_by=self.group_by, filters=self.filters,
+                                          distinct_on=self.distinct_on)
         query = query.alias().count()
         return connection.execute(query, **filter_values).fetchall()[0][0]
 
@@ -116,7 +118,7 @@ class SimpleQueryMeta(QueryMeta):
         assert self.limit is None
         self._check()
 
-        subquery = self._build_query_generic(self.columns, self.group_by, self.filters).alias()
+        subquery = self._build_query_generic(self.columns, self.group_by, self.filters, self.distinct_on).alias()
         query = sqlalchemy.select().select_from(subquery)
 
         for total_column in total_columns:
@@ -132,24 +134,36 @@ class SimpleQueryMeta(QueryMeta):
         self._check()
         return self._build_query_generic(
             self.columns, self.group_by,
-            self.filters, self.order_by, self.start, self.limit
+            self.filters, self.distinct_on, self.order_by, self.start, self.limit
         )
 
-    def _build_query_generic(self, columns, group_by=None, filters=None, order_by=None, start=None, limit=None):
+    def _build_query_generic(self, columns, group_by=None, filters=None, distinct_on=None,
+                             order_by=None, start=None, limit=None):
         try:
             query = sqlalchemy.select()
-            if group_by:
+            if group_by or distinct_on:
                 cols = [c.column_name for c in columns]
                 alias = [c.alias for c in columns]
-                for group_key in group_by:
-                    if group_key in cols:
-                        query.append_group_by(column(group_key))
-                    elif group_key in alias:
-                        aliased_columns = [col.build_column() for col in columns if col.alias == group_key]
-                        assert len(aliased_columns) == 1, "Only one column should have this alias"
-                        query.append_group_by(aliased_columns[0])
-                    else:
-                        raise SqlAggException("Group by column not present in query columns or aliases")
+                if distinct_on:
+                    for col_key in distinct_on:
+                        if col_key in cols:
+                            query = query.distinct(column(col_key))
+                        elif col_key in alias:
+                            aliased_columns = [col.build_column() for col in columns if col.alias == col_key]
+                            assert len(aliased_columns) == 1, "Only one column should have this alias"
+                            query = query.distinct(aliased_columns[0])
+                        else:
+                            raise SqlAggException("Distinct on column not present in query columns or aliases")
+                if group_by:
+                    for group_key in group_by:
+                        if group_key in cols:
+                            query.append_group_by(column(group_key))
+                        elif group_key in alias:
+                            aliased_columns = [col.build_column() for col in columns if col.alias == group_key]
+                            assert len(aliased_columns) == 1, "Only one column should have this alias"
+                            query.append_group_by(aliased_columns[0])
+                        else:
+                            raise SqlAggException("Group by column not present in query columns or aliases")
 
             for c in columns:
                 query.append_column(c.build_column())
@@ -176,15 +190,17 @@ class SimpleQueryMeta(QueryMeta):
         return query
 
     def __repr__(self):
-        return "Querymeta(columns=%s, filters=%s, group_by=%s, order_by=%s, table=%s)" % \
-               (self.columns, self.filters, self.group_by, self.order_by, self.table_name)
+        return "Querymeta(columns=%s, filters=%s, group_by=%s, distinct_on=%s, order_by=%s, table=%s)" % \
+               (self.columns, self.filters, self.group_by, self.distinct_on, self.order_by, self.table_name)
 
 
 class QueryContext(object):
-    def __init__(self, table, filters=None, group_by=None, order_by=None, start=None, limit=None):
+    def __init__(self, table, filters=None, group_by=None, distinct_on=None, order_by=None,
+                 start=None, limit=None):
         self.table_name = table
         self.filters = filters or []
         self.group_by = group_by or []
+        self.distinct_on = distinct_on or []
         self.order_by = order_by or []
         self.start = start
         self.limit = limit
@@ -207,14 +223,15 @@ class QueryContext(object):
 
     def _new_query_meta(self, column):
         if isinstance(column, QueryColumn):
-            return column.get_query_meta(self.table_name, self.filters, self.group_by, self.order_by)
+            return column.get_query_meta(self.table_name, self.filters, self.group_by, self.distinct_on,
+                                         self.order_by)
         else:
             table_name = column.table_name or self.table_name
             filters = column.filters or self.filters
             group_by = column.group_by or self.group_by
             order_by = column.order_by or self.order_by
             return SimpleQueryMeta(
-                table_name, filters, group_by, order_by,
+                table_name, filters, group_by, self.distinct_on, order_by,
                 start=self.start, limit=self.limit
             )
 
@@ -306,19 +323,21 @@ class SqlAggColumn(object):
 
 
 class QueryColumn(SqlAggColumn):
-    def get_query_meta(self, table_name, filters, group_by, order_by):
+    def get_query_meta(self, table_name, filters, group_by, distinct_on, order_by):
         raise NotImplementedError()
 
 
 class BaseColumn(SqlAggColumn):
     aggregate_fn = None
 
-    def __init__(self, key, alias=None, table_name=None, filters=None, group_by=None, order_by=None):
+    def __init__(self, key, alias=None, table_name=None, filters=None, group_by=None, distinct_on=None,
+                 order_by=None):
         self.key = key
         self.alias = alias
         self.table_name = table_name
         self.filters = filters
         self.group_by = group_by
+        self.distinct_on = distinct_on
         self.order_by = order_by
 
         if self.filters:
@@ -351,12 +370,14 @@ class CustomQueryColumn(BaseColumn, QueryColumn):
     query_cls = None
     name = None
 
-    def get_query_meta(self, default_table_name, default_filters, default_group_by, default_order_by):
+    def get_query_meta(self, default_table_name, default_filters, default_group_by, default_distinct_on,
+                       default_order_by):
         table_name = self.table_name or default_table_name
         filters = self.filters or default_filters
         group_by = self.group_by or default_group_by
+        distinct_on = self.distinct_on or default_distinct_on
         order_by = self.order_by or default_order_by
-        return self.query_cls(table_name, filters, group_by, order_by)
+        return self.query_cls(table_name, filters, group_by, distinct_on, order_by)
 
     @property
     def column_key(self):
