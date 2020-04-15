@@ -91,8 +91,9 @@ class TestSqlAggViews(BaseTest, TestCase):
         vc.append_column(i_a)
         vc.append_column(i_a2)
         data = vc.resolve(self.session.connection())
-        self.assertEqual(i_a.get_value(data), 6)
-        self.assertEqual(i_a2.get_value(data), 6)
+        self.assertEqual(len(data), 1)
+        self.assertEqual(i_a.get_value(data[0]), 6)
+        self.assertEqual(i_a2.get_value(data[0]), 6)
 
     def test_alias_column_with_aliases(self):
         vc = QueryContext("user_table")
@@ -101,8 +102,9 @@ class TestSqlAggViews(BaseTest, TestCase):
         vc.append_column(i_a)
         vc.append_column(i_a2)
         data = vc.resolve(self.session.connection())
-        self.assertEqual(i_a.get_value(data), 6)
-        self.assertEqual(i_a2.get_value(data), 6)
+        self.assertEqual(len(data), 1)
+        self.assertEqual(i_a.get_value(data[0]), 6)
+        self.assertEqual(i_a2.get_value(data[0]), 6)
 
     def test_aggregate_column(self):
         col = AggregateColumn(lambda x, y: x + y,
@@ -216,7 +218,8 @@ class TestSqlAggViews(BaseTest, TestCase):
 
     def _test_view(self, view, expected):
         data = self._get_view_data(view)
-        value = view.get_value(data)
+        self.assertEqual(len(data), 1)
+        value = view.get_value(data[0])
         self.assertAlmostEqual(float(value), float(expected))
 
     def _get_view_data(self, view):

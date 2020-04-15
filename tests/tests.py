@@ -136,7 +136,8 @@ class TestSqlAgg(BaseTest, TestCase):
         vc.append_column(agg_view)
         data = vc.resolve(self.session.connection(), None)
 
-        self.assertAlmostEqual(float(data["indicator_a"]), float(0.25))
+        self.assertEqual(len(data), 1)
+        self.assertAlmostEqual(float(data[0]["indicator_a"]), float(0.25))
 
     def test_multiple_tables(self):
         filters = [LT('date', 'enddate')]

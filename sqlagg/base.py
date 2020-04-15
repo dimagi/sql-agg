@@ -257,7 +257,11 @@ class QueryContext(object):
         """
         Returns a dict containing the data of the following format:
         * If group_by == [] or None
-            return a dict mapping column names to values: {'col_a': 1....}
+            return a dict mapping row numbers to row data:
+            e.g. {
+                    1: {'col_a': 1....}
+                    2: {...}
+                }
         * If len(group_by) == 1
             return a dict mapping groupings to that group levels data
             e.g. {
@@ -277,22 +281,19 @@ class QueryContext(object):
         for qm in self.query_meta.values():
             result = qm.execute(self.connection, filter_values or {})
 
-            for r in result:
+            for index, sql_row in enumerate(result):
                 if not qm.group_by:
-                    row_key = None
+                    row_key = index
                 elif len(qm.group_by) == 1:
-                    row_key = r[qm.group_by[0]]
+                    row_key = sql_row[qm.group_by[0]]
                 elif len(qm.group_by) > 1:
-                    row_key = tuple([r[group] for group in qm.group_by])
+                    row_key = tuple([sql_row[group] for group in qm.group_by])
 
-                if qm.group_by:
-                    if row_key is None:
-                        # null values coming out of the database wreak havoc elsewhere in the code
-                        row_key = ''
-                    row = data.setdefault(row_key, {})
-                    row.update(kvp for kvp in r.items())
-                else:
-                    data.update(kvp for kvp in r.items())
+                if row_key is None:
+                    # null values coming out of the database wreak havoc elsewhere in the code
+                    row_key = ''
+                row = data.setdefault(row_key, {})
+                row.update(kvp for kvp in sql_row.items())
 
         return data
 
