@@ -246,7 +246,12 @@ class QueryContext(object):
             return query_meta_values[0].count(
                 connection, filter_values or {}
             )
-        return 0
+        else:
+            query_meta = SimpleQueryMeta(
+                self.table_name, self.filters, self.group_by, self.distinct_on, self.order_by,
+                start=self.start, limit=self.limit
+            )
+            return query_meta.count(connection, filter_values or {})
 
     def totals(self, connection, total_columns, filter_values=None):
         self.connection = connection
