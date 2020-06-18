@@ -42,7 +42,7 @@ class SimpleSqlColumn(SqlColumn):
         return sql_col.label(self.label)
 
     def __repr__(self):
-        return "SqlColumn(column_name=%s)" % self.column_name
+        return "SqlColumn(column_name=%s, aggregate_fn=%s)" % (self.column_name, self.aggregate_fn)
 
 
 class QueryMeta(object):
@@ -110,7 +110,11 @@ class SimpleQueryMeta(QueryMeta):
         self._check()
         query = self._build_query_generic(self.columns, group_by=self.group_by, filters=self.filters,
                                           distinct_on=self.distinct_on)
-        query = query.alias().count()
+
+        if any(col.aggregate_fn for col in self.columns):
+            query = sqlalchemy.select([sqlalchemy.func.count()]).select_from(query.alias())
+        else:
+            query = query.with_only_columns([sqlalchemy.func.count()]).order_by(None)
         return connection.execute(query, **filter_values).fetchall()[0][0]
 
     def totals(self, connection, filter_values, total_columns):

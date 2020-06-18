@@ -256,6 +256,15 @@ class TestSqlAgg(BaseTest, TestCase):
         vc.append_column(SumColumn('indicator_a'))
         self.assertEqual(1, vc.count(self.session.connection(), {'username': 'user1'},))
 
+    def test_count(self):
+        vc = QueryContext(
+            "user_table",
+            filters=[EQ('user', 'username')],
+        )
+
+        vc.append_column(SimpleColumn('indicator_a'))
+        self.assertEqual(2, vc.count(self.session.connection(), {'username': 'user1'},))
+
     def test_user_view_data(self):
         data = self._get_user_view_data(None, None)
 
