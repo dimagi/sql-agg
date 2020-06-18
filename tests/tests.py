@@ -257,7 +257,7 @@ class TestSqlAgg(BaseTest, TestCase):
         vc.append_column(SumColumn('indicator_a'))
         self.assertEqual(1, vc.count(self.session.connection(), {'username': 'user1'},))
 
-    def test_count(self):
+    def test_count_no_grouping(self):
         vc = QueryContext(
             "user_table",
             filters=[EQ('user', 'username')],
