@@ -110,7 +110,7 @@ class SimpleQueryMeta(QueryMeta):
         self._check()
         query = self._build_query_generic(self.columns, group_by=self.group_by, filters=self.filters,
                                           distinct_on=self.distinct_on)
-        query = query.alias().count()
+        query = sqlalchemy.select([sqlalchemy.func.count()]).select_from(query.alias())
         return connection.execute(query, **filter_values).fetchall()[0][0]
 
     def totals(self, connection, filter_values, total_columns):
