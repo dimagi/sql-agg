@@ -270,7 +270,6 @@ class TestSqlAgg(BaseTest, TestCase):
             "user_table",
         )
 
-        vc.append_column(SimpleColumn('indicator_c'))
         self.assertEqual(4, vc.count(self.session.connection(),))
 
     def test_user_view_data(self):
