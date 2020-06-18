@@ -115,7 +115,7 @@ class SimpleQueryMeta(QueryMeta):
             query = sqlalchemy.select([sqlalchemy.func.count()]).select_from(query.alias())
         else:
             query = query.with_only_columns([sqlalchemy.func.count()]).order_by(None)
-        return connection.execute(query, **filter_values).fetchall()[0][0]
+        return connection.execute(query, **filter_values).scalar()
 
     def totals(self, connection, filter_values, total_columns):
         assert self.start is None
