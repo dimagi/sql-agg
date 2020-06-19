@@ -266,6 +266,22 @@ class TestSqlAgg(BaseTest, TestCase):
         vc.append_column(SimpleColumn('indicator_a'))
         self.assertEqual(2, vc.count(self.session.connection(), {'username': 'user1'},))
 
+    def test_count_group_no_agg(self):
+        # due to past idiosyncrasy of sqlagg CommCare was adding a group by on
+        # primary keys as follows:
+        #
+        #   SELECT username_ea02198f AS column_0, doc_id AS doc_id FROM ucr_table_x GROUP BY doc_id
+        #
+        # When doing a count of this query we have to do a subquery
+
+        vc = QueryContext(
+            "user_table",
+            group_by=['indicator_a']
+        )
+
+        vc.append_column(SimpleColumn('indicator_a'))
+        self.assertEqual(4, vc.count(self.session.connection(),))
+
     def test_count_with_nulls(self):
         vc = QueryContext(
             "user_table",
