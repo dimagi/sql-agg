@@ -42,7 +42,7 @@ class SimpleSqlColumn(SqlColumn):
         return sql_col.label(self.label)
 
     def __repr__(self):
-        return "SqlColumn(column_name=%s)" % self.column_name
+        return "SqlColumn(column_name=%s, aggregate_fn=%s)" % (self.column_name, self.aggregate_fn)
 
 
 class QueryMeta(object):
@@ -110,8 +110,12 @@ class SimpleQueryMeta(QueryMeta):
         self._check()
         query = self._build_query_generic(self.columns, group_by=self.group_by, filters=self.filters,
                                           distinct_on=self.distinct_on)
-        query = query.alias().count()
-        return connection.execute(query, **filter_values).fetchall()[0][0]
+
+        if any(col.aggregate_fn for col in self.columns):
+            query = sqlalchemy.select([sqlalchemy.func.count()]).select_from(query.alias())
+        else:
+            query = query.with_only_columns([sqlalchemy.func.count()]).order_by(None)
+        return connection.execute(query, **filter_values).scalar()
 
     def totals(self, connection, filter_values, total_columns):
         assert self.start is None
@@ -242,7 +246,12 @@ class QueryContext(object):
             return query_meta_values[0].count(
                 connection, filter_values or {}
             )
-        return 0
+        else:
+            query_meta = SimpleQueryMeta(
+                self.table_name, self.filters, self.group_by, self.distinct_on, self.order_by,
+                start=self.start, limit=self.limit
+            )
+            return query_meta.count(connection, filter_values or {})
 
     def totals(self, connection, total_columns, filter_values=None):
         self.connection = connection
