@@ -111,7 +111,7 @@ class SimpleQueryMeta(QueryMeta):
         query = self._build_query_generic(self.columns, group_by=self.group_by, filters=self.filters,
                                           distinct_on=self.distinct_on)
 
-        if any(col.aggregate_fn for col in self.columns):
+        if self.group_by or any(col.aggregate_fn for col in self.columns):
             query = sqlalchemy.select([sqlalchemy.func.count()]).select_from(query.alias())
         else:
             query = query.with_only_columns([sqlalchemy.func.count()]).order_by(None)
