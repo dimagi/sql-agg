@@ -89,6 +89,8 @@ class ArrayAggColumn(BaseColumn):
     """
     Perform array aggregation on a column
     Pass order_by_col to sort by another column within the group
+    Using order_by_col clause is not fully supported for partitioned databases in citus 
+    and should be used cautiously
     Example: array generated for a column col1, ordered by col2 with select clause like
     Select ARRAY_AGG(col1 ORDER BY col2), col3 ..
     """
