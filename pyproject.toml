@@ -27,7 +27,7 @@ test = [
     "SQLAlchemy-Fixtures>=0.1.5",
     "fixture>=1.4",
     "pytest",
-    "psycopg2",
+    "psycopg2-binary",
 ]
 
 [build-system]

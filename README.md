@@ -175,22 +175,22 @@ In this case the same filter could be expressed as follows:
 
 # Development
 
-To install dependencies run
+To install dependencies, create/activate a virtualenv and run
 
-`pip install .`
+```sh
+pip install -e .[test]
+```
 
 ## Running Tests
 
 First create an environment variable for the appropriate connection string:
 
 ```bash
-export SQLAGG_TEST_CONNECTION_STRING='postgresql://user:pass@localhost:5432/sqlagg_test
+export SQLAGG_TEST_CONNECTION_STRING='postgresql://user:pass@localhost:5432/sqlagg_test'
 ```
 
 Then run the following
 
 ```python
-python setup.py test
+pytest
 ```
-
-Note: If you face issues with psycopg2 try replacing with `psycopg2-binary` in setup.py
