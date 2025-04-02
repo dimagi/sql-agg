@@ -115,7 +115,8 @@ class TestSqlAgg(DataTestCase):
         vc = QueryContext("user_table", filters=None, group_by=[])
 
         class CustomColumn(BaseColumn):
-            aggregate_fn = lambda view, col: func.avg(col) / func.sum(col)
+            def aggregate_fn(view, col):
+                return func.avg(col) / func.sum(col)
 
         agg_view = CustomColumn("indicator_a")
         vc.append_column(agg_view)
