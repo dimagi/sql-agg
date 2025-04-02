@@ -11,7 +11,6 @@ from sqlalchemy import column, table
 from sqlagg.exceptions import ColumnNotFoundException, SqlAggException, \
     DuplicateColumnsException
 from sqlagg.filters import SqlFilter
-from six.moves import zip
 
 
 class SqlColumn(object):

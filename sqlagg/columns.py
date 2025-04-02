@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 from sqlalchemy import func, distinct, case, text, cast, Integer, column
 from sqlalchemy.dialects.postgresql import aggregate_order_by
 from .base import BaseColumn, CustomQueryColumn, SqlColumn
-import six
 import uuid
 
 
@@ -179,7 +178,7 @@ class ConditionalColumn(SqlColumn):
                 when = text(when_with_named_binds).bindparams(**named_binds)
             else:
                 when = text(when)
-            then = text(then) if isinstance(then, six.string_types) else then
+            then = text(then) if isinstance(then, str) else then
             whens.append((when, then))
         return whens
 
