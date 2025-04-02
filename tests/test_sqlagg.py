@@ -3,28 +3,17 @@ from __future__ import division
 from __future__ import unicode_literals
 
 from datetime import date
-from unittest import TestCase
 
 from sqlalchemy.exc import ProgrammingError
-from sqlalchemy.orm import scoped_session, sessionmaker
 
 from sqlagg import *
 from sqlagg.columns import *
 from sqlagg.filters import LT, GTE, GT, AND, EQ
 from sqlagg.sorting import OrderBy
-from . import BaseTest
+from . import DataTestCase
 
 
-class TestSqlAgg(BaseTest, TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.Session = scoped_session(sessionmaker(bind=cls.metadata().bind, autoflush=True))
-        cls.session = cls.Session()
-
-    def tearDown(self):
-        self.session.close()
-        self.session = self.Session()
-        super(TestSqlAgg, self).tearDown()
+class TestSqlAgg(DataTestCase):
 
     def test_single_group(self):
         data = self._get_user_data(None, None)

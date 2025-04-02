@@ -1,33 +1,18 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 import datetime
-from unittest import TestCase
 
 from sqlagg.filters import EQ
 from sqlagg.sorting import OrderBy
-from . import BaseTest, engine
-from sqlalchemy.orm import sessionmaker
+from . import DataTestCase
 
 from sqlagg import *
 from sqlagg.columns import MonthColumn, DayColumn, YearColumn, WeekColumn, CountUniqueColumn, DayOfWeekColumn, \
     DayOfYearColumn, YearQuarterColumn, NonzeroSumColumn, ConditionalAggregation, \
     ArrayAggColumn, SimpleColumn
 
-Session = sessionmaker()
 
-
-class TestSqlAggViews(BaseTest, TestCase):
-    def setUp(self):
-        self.connection = engine.connect()
-        self.trans = self.connection.begin()
-        self.session = Session(bind=self.connection)
-        super(TestSqlAggViews, self).setUp()
-
-    def tearDown(self):
-        super(TestSqlAggViews, self).tearDown()
-        self.trans.commit()
-        self.session.close()
-        self.connection.close()
+class TestSqlAggViews(DataTestCase):
 
     def test_column_key(self):
         self.assertEquals(hash(SumColumn("").column_key), hash(SumColumn("").column_key))

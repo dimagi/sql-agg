@@ -16,7 +16,7 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
-    'SQLAlchemy>=1.0.9',
+    'SQLAlchemy>=1.0.9,<1.4',
 ]
 
 [project.urls]
@@ -25,8 +25,8 @@ Home = "https://github.com/dimagi/sql-agg"
 [project.optional-dependencies]
 test = [
     "SQLAlchemy-Fixtures>=0.1.5",
-    "fixture>=1.4",
     "pytest",
+    "pytest-unmagic",
     "psycopg2-binary",
 ]
 
