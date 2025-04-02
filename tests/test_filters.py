@@ -54,10 +54,10 @@ class TestSqlAggViews(TestCase):
         a = AND([RAW('fancy'), RAW('good')])
         self.assertEqual(str(a.build_expression()), 'fancy AND good')
         self._test_equality(a, AND([RAW('fancy'), RAW('good')]), AND([RAW('fancy'), RAW('other')]))
-        self.assertNotEquals(a, AND([RAW('fancy'), RAW('good'), RAW('other')]))
+        self.assertNotEqual(a, AND([RAW('fancy'), RAW('good'), RAW('other')]))
 
         # test ordering
-        self.assertEquals(
+        self.assertEqual(
             AND([OR([RAW('a'), EQFilter('b', 'c')]), NOT(BETWEEN('d', 'e', 'f'))]),
             AND([NOT(BETWEEN('d', 'e', 'f')), OR([EQFilter('b', 'c'), RAW('a')])])
         )
@@ -66,10 +66,10 @@ class TestSqlAggViews(TestCase):
         a = OR([RAW('fancy'), RAW('good')])
         self.assertEqual(str(a.build_expression()), 'fancy OR good')
         self._test_equality(a, OR([RAW('fancy'), RAW('good')]), OR([RAW('fancy'), RAW('other')]))
-        self.assertNotEquals(a, OR([RAW('fancy'), RAW('good'), RAW('other')]))
+        self.assertNotEqual(a, OR([RAW('fancy'), RAW('good'), RAW('other')]))
 
         # test ordering
-        self.assertEquals(
+        self.assertEqual(
             OR([AND([RAW('a'), EQFilter('b', 'c')]), NOT(BETWEEN('d', 'e', 'f'))]),
             OR([NOT(BETWEEN('d', 'e', 'f')), AND([EQFilter('b', 'c'), RAW('a')])])
         )
@@ -95,12 +95,12 @@ class TestSqlAggViews(TestCase):
             INFilter(self.column_name, ('option_1', 'option_2')),
             INFilter(self.column_name, ('option_1', 'option_3'))
         )
-        self.assertEquals(a, INFilter(self.column_name, ('option_2', 'option_1')))
+        self.assertEqual(a, INFilter(self.column_name, ('option_2', 'option_1')))
 
     def _test_equality(self, filterA, filterB, filterC):
-        self.assertEquals(hash(filterA), hash(filterB))
+        self.assertEqual(hash(filterA), hash(filterB))
         self.assertEqual(filterA, filterB)
-        self.assertNotEquals(filterA, filterC)
-        self.assertNotEquals(hash(filterA), hash(filterC))
-        self.assertNotEquals(filterB, filterC)
-        self.assertNotEquals(hash(filterB), hash(filterC))
+        self.assertNotEqual(filterA, filterC)
+        self.assertNotEqual(hash(filterA), hash(filterC))
+        self.assertNotEqual(filterB, filterC)
+        self.assertNotEqual(hash(filterB), hash(filterC))
