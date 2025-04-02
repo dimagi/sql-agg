@@ -6,8 +6,8 @@ from datetime import date
 
 from sqlalchemy.exc import ProgrammingError
 
-from sqlagg import *
-from sqlagg.columns import *
+from sqlagg import QueryContext, BaseColumn, DuplicateColumnsException, AggregateColumn
+from sqlagg.columns import SimpleColumn, SumColumn, CountColumn, MeanColumn
 from sqlagg.filters import LT, GTE, GT, AND, EQ
 from sqlagg.sorting import OrderBy
 from . import DataTestCase

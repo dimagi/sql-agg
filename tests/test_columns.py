@@ -2,14 +2,35 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 import datetime
 
+from sqlagg import (
+    AggregateColumn,
+    AliasColumn,
+    CountColumn,
+    MaxColumn,
+    MeanColumn,
+    MinColumn,
+    QueryContext,
+    SumColumn,
+    SumWhen,
+)
+from sqlagg.columns import (
+    ArrayAggColumn,
+    ConditionalAggregation,
+    CountUniqueColumn,
+    DayColumn,
+    DayOfWeekColumn,
+    DayOfYearColumn,
+    MonthColumn,
+    NonzeroSumColumn,
+    SimpleColumn,
+    WeekColumn,
+    YearColumn,
+    YearQuarterColumn,
+)
 from sqlagg.filters import EQ
 from sqlagg.sorting import OrderBy
-from . import DataTestCase
 
-from sqlagg import *
-from sqlagg.columns import MonthColumn, DayColumn, YearColumn, WeekColumn, CountUniqueColumn, DayOfWeekColumn, \
-    DayOfYearColumn, YearQuarterColumn, NonzeroSumColumn, ConditionalAggregation, \
-    ArrayAggColumn, SimpleColumn
+from . import DataTestCase
 
 
 class TestSqlAggViews(DataTestCase):
@@ -121,7 +142,6 @@ class TestSqlAggViews(DataTestCase):
         self._test_view(col, 4)
 
     def test_group_by_conditional(self):
-        from sqlalchemy import func
         vc = QueryContext("user_table", group_by=['bucket'])
         vc.append_column(ConditionalAggregation(whens=[
             ["indicator_a between 0 and 1", "'0-1'"],

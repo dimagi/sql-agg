@@ -2,8 +2,7 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-import collections
-from collections import OrderedDict
+from collections import Counter, OrderedDict
 
 import sqlalchemy
 from sqlalchemy import column, table
@@ -88,7 +87,7 @@ class SimpleQueryMeta(QueryMeta):
                 self.columns.append(SimpleSqlColumn(g, aggregate_fn=None, alias=g))
 
         labels = [col.label for col in self.columns]
-        duplicates = [label for label, count in collections.Counter(labels).items() if count > 1]
+        duplicates = [label for label, count in Counter(labels).items() if count > 1]
         if duplicates:
             raise DuplicateColumnsException(
                 'Query has duplicate columns: {}. '

@@ -2,9 +2,17 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 from unittest import TestCase
 
-from sqlalchemy import Column, String
-
-from sqlagg.filters import *
+from sqlagg.filters import (
+    AND,
+    BETWEEN,
+    ISNULL,
+    NOT,
+    NOTNULL,
+    OR,
+    RAW,
+    EQFilter,
+    INFilter,
+)
 
 
 class TestSqlAggViews(TestCase):
