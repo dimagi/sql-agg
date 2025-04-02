@@ -1,6 +1,4 @@
-from __future__ import absolute_import
-from __future__ import unicode_literals
-import collections
+from collections.abc import Iterable
 from functools import total_ordering
 
 from sqlalchemy import bindparam, text, column
@@ -130,7 +128,7 @@ class INFilter(BasicFilter):
     """
     operator_string = 'in'
     def build_expression(self):
-        assert isinstance(self.parameter, collections.Iterable)
+        assert isinstance(self.parameter, Iterable)
         return operators.in_op(
             column(self.column_name),
             tuple(bindparam(param) for param in self.parameter)

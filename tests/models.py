@@ -1,8 +1,6 @@
-from __future__ import absolute_import
-from __future__ import unicode_literals
 import sqlalchemy
-from sqlalchemy import *
-from sqlalchemy.orm import *
+from sqlalchemy import Table, Column, String, DATE, INT
+from sqlalchemy.orm import mapper
 
 metadata = sqlalchemy.MetaData()
 

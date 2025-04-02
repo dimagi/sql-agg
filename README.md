@@ -1,6 +1,4 @@
 # sql-agg
-[![Build Status](https://travis-ci.org/dimagi/sql-agg.png)](https://travis-ci.org/dimagi/sql-agg)
-[![Test coverage](https://coveralls.io/repos/dimagi/sql-agg/badge.png?branch=master)](https://coveralls.io/r/dimagi/sql-agg)
 
 ## Basic usage
 Assuming you have the following database table:
@@ -15,8 +13,9 @@ You can use sql-agg to extract aggregated data from the table as follows:
 
 ```python
 from datetime import date
-from sqlagg import *
-from sqlagg.columns import *
+from sqlagg import QueryContext
+from sqlagg.columns import CountColumn, SimpleColumn, SumColumn
+from sqlagg.filters import GT, LT
 
 # create the columns
 user = SimpleColumn("user")
@@ -50,7 +49,7 @@ The resultant `data` variable will be a dictionary as follows:
         "column_b": 2
     },
     "user2": {
-        "user": "user2"
+        "user": "user2",
         "column_a": 0,
         "column_b": 1
     }
@@ -66,7 +65,7 @@ region = SimpleColumn("region")
 sub_region = SimpleColumn("sub_region")
 column_a = SumColumn("column_a")
 
-vc = QueryContext("table_name"
+vc = QueryContext("table_name",
     filters=None,
     group_by=["region","sub_region"])
 ```
@@ -175,22 +174,22 @@ In this case the same filter could be expressed as follows:
 
 # Development
 
-To install dependencies run
+To install dependencies, create/activate a virtualenv and run
 
-`pip install .`
+```sh
+pip install -e .[test]
+```
 
 ## Running Tests
 
 First create an environment variable for the appropriate connection string:
 
 ```bash
-export SQLAGG_TEST_CONNECTION_STRING='postgresql://user:pass@localhost:5432/sqlagg_test
+export SQLAGG_TEST_CONNECTION_STRING='postgresql://user:pass@localhost:5432/sqlagg_test'
 ```
 
 Then run the following
 
 ```python
-python setup.py test
+pytest
 ```
-
-Note: If you face issues with psycopg2 try replacing with `psycopg2-binary` in setup.py

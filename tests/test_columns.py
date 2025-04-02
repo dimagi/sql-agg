@@ -1,55 +1,59 @@
-from __future__ import absolute_import
-from __future__ import unicode_literals
 import datetime
-from unittest import TestCase
 
+from sqlagg import (
+    AggregateColumn,
+    AliasColumn,
+    CountColumn,
+    MaxColumn,
+    MeanColumn,
+    MinColumn,
+    QueryContext,
+    SumColumn,
+    SumWhen,
+)
+from sqlagg.columns import (
+    ArrayAggColumn,
+    ConditionalAggregation,
+    CountUniqueColumn,
+    DayColumn,
+    DayOfWeekColumn,
+    DayOfYearColumn,
+    MonthColumn,
+    NonzeroSumColumn,
+    SimpleColumn,
+    WeekColumn,
+    YearColumn,
+    YearQuarterColumn,
+)
 from sqlagg.filters import EQ
 from sqlagg.sorting import OrderBy
-from . import BaseTest, engine
-from sqlalchemy.orm import sessionmaker
 
-from sqlagg import *
-from sqlagg.columns import MonthColumn, DayColumn, YearColumn, WeekColumn, CountUniqueColumn, DayOfWeekColumn, \
-    DayOfYearColumn, YearQuarterColumn, NonzeroSumColumn, ConditionalAggregation, \
-    ArrayAggColumn, SimpleColumn
-
-Session = sessionmaker()
+from . import DataTestCase
 
 
-class TestSqlAggViews(BaseTest, TestCase):
-    def setUp(self):
-        self.connection = engine.connect()
-        self.trans = self.connection.begin()
-        self.session = Session(bind=self.connection)
-        super(TestSqlAggViews, self).setUp()
-
-    def tearDown(self):
-        super(TestSqlAggViews, self).tearDown()
-        self.trans.commit()
-        self.session.close()
-        self.connection.close()
+class TestSqlAggViews(DataTestCase):
 
     def test_column_key(self):
-        self.assertEquals(hash(SumColumn("").column_key), hash(SumColumn("").column_key))
-        self.assertNotEquals(
+        self.assertEqual(hash(SumColumn("").column_key), hash(SumColumn("").column_key))
+        self.assertNotEqual(
             hash(SumColumn("", table_name='a').column_key),
             hash(SumColumn("", table_name='b').column_key)
         )
-        self.assertEquals(
+        self.assertEqual(
             hash(SumColumn("", filters=[EQ('a', 'b')]).column_key),
             hash(SumColumn("", filters=[EQ('a', 'b')]).column_key)
         )
         # different filter order doesn't matter
-        self.assertEquals(
+        self.assertEqual(
             hash(SumColumn("", filters=[EQ('a', 'b'), EQ('c', 'd')]).column_key),
             hash(SumColumn("", filters=[EQ('c', 'd'), EQ('a', 'b')]).column_key)
         )
-        self.assertEquals(
+        self.assertEqual(
             hash(SumColumn("", filters=[EQ('a', 'b')], group_by=['month', 'day']).column_key),
             hash(SumColumn("", filters=[EQ('a', 'b')], group_by=['month', 'day']).column_key)
         )
         # different group order does matter
-        self.assertNotEquals(
+        self.assertNotEqual(
             hash(SumColumn("", filters=[EQ('a', 'b')], group_by=['month', 'day']).column_key),
             hash(SumColumn("", filters=[EQ('a', 'b')], group_by=['day', 'month']).column_key)
         )
@@ -136,7 +140,6 @@ class TestSqlAggViews(BaseTest, TestCase):
         self._test_view(col, 4)
 
     def test_group_by_conditional(self):
-        from sqlalchemy import func
         vc = QueryContext("user_table", group_by=['bucket'])
         vc.append_column(ConditionalAggregation(whens=[
             ["indicator_a between 0 and 1", "'0-1'"],
@@ -144,7 +147,7 @@ class TestSqlAggViews(BaseTest, TestCase):
         ], else_='3+', alias='bucket'))
         vc.append_column(CountColumn('user'))
         result = vc.resolve(self.session.connection())
-        self.assertEquals(result, {
+        self.assertEqual(result, {
             '0-1': {'bucket': '0-1', 'user': 2},
             '2': {'bucket': '2', 'user': 1},
             '3+': {'bucket': '3+', 'user': 1},
@@ -156,7 +159,7 @@ class TestSqlAggViews(BaseTest, TestCase):
         array_agg_column = ArrayAggColumn('indicator_a', 'date')
         vc.append_column(array_agg_column)
         result = vc.resolve(self.session.connection())
-        self.assertEquals(result, {
+        self.assertEqual(result, {
             (u'region1', u'region1_a'): {'indicator_a': [0, 1], 'region': 'region1', 'sub_region': 'region1_a'},
             (u'region1', u'region1_b'): {'indicator_a': [3, 1], 'region': 'region1', 'sub_region': 'region1_b'},
             (u'region2', u'region2_a'): {'indicator_a': [2], 'region': 'region2', 'sub_region': 'region2_a'},
@@ -168,7 +171,7 @@ class TestSqlAggViews(BaseTest, TestCase):
         array_agg_column = ArrayAggColumn('indicator_a')
         vc.append_column(array_agg_column)
         result = vc.resolve(self.session.connection())
-        self.assertEquals(result, {
+        self.assertEqual(result, {
             (u'region1', u'region1_a'): {'indicator_a': [1, 0], 'region': 'region1', 'sub_region': 'region1_a'},
             (u'region1', u'region1_b'): {'indicator_a': [3, 1], 'region': 'region1', 'sub_region': 'region1_b'},
             (u'region2', u'region2_a'): {'indicator_a': [2], 'region': 'region2', 'sub_region': 'region2_a'},
@@ -178,43 +181,43 @@ class TestSqlAggViews(BaseTest, TestCase):
         vc = QueryContext("user_table", group_by=['month'])
         vc.append_column(MonthColumn('date', alias='month'))
         result = vc.resolve(self.session.connection())
-        self.assertEquals(result, {1.0: {'month': 1.0}, 2.0: {'month': 2.0}, 3.0: {'month': 3.0}})
+        self.assertEqual(result, {1.0: {'month': 1.0}, 2.0: {'month': 2.0}, 3.0: {'month': 3.0}})
 
     def test_day(self):
         vc = QueryContext("user_table", group_by=['day'])
         vc.append_column(DayColumn('date', alias='day'))
         result = vc.resolve(self.session.connection())
-        self.assertEquals(result, {1.0: {'day': 1.0}})
+        self.assertEqual(result, {1.0: {'day': 1.0}})
 
     def test_year(self):
         vc = QueryContext("user_table", group_by=['year'])
         vc.append_column(YearColumn('date', alias='year'))
         result = vc.resolve(self.session.connection())
-        self.assertEquals(result, {2013.0: {'year': 2013.0}})
+        self.assertEqual(result, {2013.0: {'year': 2013.0}})
 
     def test_week(self):
         vc = QueryContext("user_table", group_by=['week'])
         vc.append_column(WeekColumn('date', alias='week'))
         result = vc.resolve(self.session.connection())
-        self.assertEquals(result, {1.0: {'week': 1.0}, 5.0: {'week': 5.0}, 9.0: {'week': 9.0}})
+        self.assertEqual(result, {1.0: {'week': 1.0}, 5.0: {'week': 5.0}, 9.0: {'week': 9.0}})
 
     def test_day_of_week(self):
         vc = QueryContext("user_table", group_by=['dow'])
         vc.append_column(DayOfWeekColumn('date', alias='dow'))
         result = vc.resolve(self.session.connection())
-        self.assertEquals(result, {2.0: {'dow': 2.0}, 5.0: {'dow': 5.0}})
+        self.assertEqual(result, {2.0: {'dow': 2.0}, 5.0: {'dow': 5.0}})
 
     def test_day_of_year(self):
         vc = QueryContext("user_table", group_by=['doy'])
         vc.append_column(DayOfYearColumn('date', alias='doy'))
         result = vc.resolve(self.session.connection())
-        self.assertEquals(result, {1.0: {'doy': 1.0}, 32.0: {'doy': 32.0}, 60.0: {'doy': 60.0}})
+        self.assertEqual(result, {1.0: {'doy': 1.0}, 32.0: {'doy': 32.0}, 60.0: {'doy': 60.0}})
 
     def test_quarter(self):
         vc = QueryContext("user_table", group_by=['q'])
         vc.append_column(YearQuarterColumn('date', alias='q'))
         result = vc.resolve(self.session.connection())
-        self.assertEquals(result, {1.0: {'q': 1.0}})
+        self.assertEqual(result, {1.0: {'q': 1.0}})
 
     def _test_view(self, view, expected):
         data = self._get_view_data(view)
@@ -238,7 +241,7 @@ class TestSqlAggViews(BaseTest, TestCase):
         vc.append_column(YearColumn('date', alias='year'))
         vc.append_column(SimpleColumn('indicator_a'))
         result = vc.resolve(self.session.connection())
-        self.assertEquals(result, {
+        self.assertEqual(result, {
             ('user1', datetime.date(2013, 2, 1)): {'user': 'user1', 'year': 2013.0, 'indicator_a': 3,
                                                    'date': datetime.date(2013, 2, 1)},
             ('user2', datetime.date(2013, 3, 1)): {'user': 'user2', 'year': 2013.0, 'indicator_a': 2,

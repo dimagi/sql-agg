@@ -1,9 +1,6 @@
-from __future__ import absolute_import
-from __future__ import unicode_literals
 from sqlalchemy import func, distinct, case, text, cast, Integer, column
 from sqlalchemy.dialects.postgresql import aggregate_order_by
-from .base import BaseColumn, CustomQueryColumn, SqlColumn
-import six
+from .base import BaseColumn, SqlColumn
 import uuid
 
 
@@ -12,31 +9,38 @@ class SimpleColumn(BaseColumn):
 
 
 class YearColumn(BaseColumn):
-    aggregate_fn = lambda _, y: func.extract('YEAR', y)
+    def aggregate_fn(self, y):
+        return func.extract('YEAR', y)
 
 
 class MonthColumn(BaseColumn):
-    aggregate_fn = lambda _, y: func.extract('MONTH', y)
+    def aggregate_fn(self, y):
+        return func.extract('MONTH', y)
 
 
 class WeekColumn(BaseColumn):
-    aggregate_fn = lambda _, y: func.extract('WEEK', y)
+    def aggregate_fn(self, y):
+        return func.extract('WEEK', y)
 
 
 class DayColumn(BaseColumn):
-    aggregate_fn = lambda _, y: func.extract('DAY', y)
+    def aggregate_fn(self, y):
+        return func.extract('DAY', y)
 
 
 class YearQuarterColumn(BaseColumn):
-    aggregate_fn = lambda _, y: func.extract('QUARTER', y)
+    def aggregate_fn(self, y):
+        return func.extract('QUARTER', y)
 
 
 class DayOfWeekColumn(BaseColumn):
-    aggregate_fn = lambda _, y: func.extract('DOW', y)
+    def aggregate_fn(self, y):
+        return func.extract('DOW', y)
 
 
 class DayOfYearColumn(BaseColumn):
-    aggregate_fn = lambda _, y: func.extract('DOY', y)
+    def aggregate_fn(self, y):
+        return func.extract('DOY', y)
 
 
 class SumColumn(BaseColumn):
@@ -65,11 +69,13 @@ class MeanColumn(BaseColumn):
 
 
 class NonzeroSumColumn(BaseColumn):
-    aggregate_fn = lambda _, column: cast(func.sum(column) > 0, Integer)
+    def aggregate_fn(self, column):
+        return cast(func.sum(column) > 0, Integer)
 
 
 class CountUniqueColumn(BaseColumn):
-    aggregate_fn = lambda _, column: func.count(distinct(column))
+    def aggregate_fn(self, column):
+        return func.count(distinct(column))
 
 
 class ConditionalAggregation(BaseColumn):
@@ -179,7 +185,7 @@ class ConditionalColumn(SqlColumn):
                 when = text(when_with_named_binds).bindparams(**named_binds)
             else:
                 when = text(when)
-            then = text(then) if isinstance(then, six.string_types) else then
+            then = text(then) if isinstance(then, str) else then
             whens.append((when, then))
         return whens
 

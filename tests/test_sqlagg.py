@@ -1,30 +1,15 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import unicode_literals
-
 from datetime import date
-from unittest import TestCase
 
 from sqlalchemy.exc import ProgrammingError
-from sqlalchemy.orm import scoped_session, sessionmaker
 
-from sqlagg import *
-from sqlagg.columns import *
+from sqlagg import QueryContext, BaseColumn, DuplicateColumnsException, AggregateColumn
+from sqlagg.columns import SimpleColumn, SumColumn, CountColumn, MeanColumn
 from sqlagg.filters import LT, GTE, GT, AND, EQ
 from sqlagg.sorting import OrderBy
-from . import BaseTest
+from . import DataTestCase
 
 
-class TestSqlAgg(BaseTest, TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.Session = scoped_session(sessionmaker(bind=cls.metadata().bind, autoflush=True))
-        cls.session = cls.Session()
-
-    def tearDown(self):
-        self.session.close()
-        self.session = self.Session()
-        super(TestSqlAgg, self).tearDown()
+class TestSqlAgg(DataTestCase):
 
     def test_single_group(self):
         data = self._get_user_data(None, None)
@@ -81,7 +66,7 @@ class TestSqlAgg(BaseTest, TestCase):
         vc.append_column(user)
         vc.append_column(i_a)
         vc.append_column(i_b)
-        self.assertEquals(2, len(vc.get_query_strings(self.session.connection())))
+        self.assertEqual(2, len(vc.get_query_strings(self.session.connection())))
         data = vc.resolve(self.session.connection(), filter_values)
         self.assertEqual(data['user1']['indicator_a'], 1)
         self.assertNotIn('indicator_b', data['user1'])
@@ -130,7 +115,8 @@ class TestSqlAgg(BaseTest, TestCase):
         vc = QueryContext("user_table", filters=None, group_by=[])
 
         class CustomColumn(BaseColumn):
-            aggregate_fn = lambda view, col: func.avg(col) / func.sum(col)
+            def aggregate_fn(view, col):
+                return func.avg(col) / func.sum(col)
 
         agg_view = CustomColumn("indicator_a")
         vc.append_column(agg_view)
