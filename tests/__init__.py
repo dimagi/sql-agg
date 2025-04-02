@@ -3,9 +3,6 @@ The test database must be created with something like
 
     psql -h localhost postgres postgres -c 'CREATE DATABASE sqlagg_test;'
 """
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
 import os
 from unittest import TestCase
 

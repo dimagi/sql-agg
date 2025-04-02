@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-from __future__ import unicode_literals
 from collections.abc import Iterable
 from functools import total_ordering
 

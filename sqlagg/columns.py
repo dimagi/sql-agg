@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-from __future__ import unicode_literals
 from sqlalchemy import func, distinct, case, text, cast, Integer, column
 from sqlalchemy.dialects.postgresql import aggregate_order_by
 from .base import BaseColumn, SqlColumn
