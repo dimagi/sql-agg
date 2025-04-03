@@ -193,3 +193,21 @@ Then run the following
 ```python
 pytest
 ```
+
+## Publishing to PyPI
+
+To publish a new release on [pypi.org](https://pypi.org/p/sqlagg/):
+
+- Update `__version__` in [sqlagg/_\_init__.py](sqlagg/__init__.py). 
+- Create and push a git tag with the new version number.
+  ```sh
+  git tag vX.Y.Z
+  git push --tags
+  ```
+- Wait for the [pypi.yml workflow](https://github.com/dimagi/sql-agg/actions/workflows/pypi.yml)
+  to build and publish the new release.
+
+A dev release is published on [test.pypi.org](https://test.pypi.org/p/sqlagg/)
+on each new push or merge to master. A dev release may also be published
+on-demand for any branch with
+[workflow dispatch](https://github.com/dimagi/sql-agg/actions/workflows/pypi.yml).
